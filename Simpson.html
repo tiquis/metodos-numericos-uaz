@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integración Numérica: Reglas de Simpson</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Integración de KaTeX para tipografía matemática perfecta -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+    
+    <!-- Librería math.js para parsear y evaluar funciones dinámicamente -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.js"></script>
+    
+    <script>
+        // Esperamos a que todo el HTML se dibuje antes de convertir las matemáticas
+        document.addEventListener("DOMContentLoaded", function() {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '\\(', right: '\\)', display: false},
+                    {left: '\\[', right: '\\]', display: true}
+                ],
+                throwOnError : false
+            });
+        });
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+        
+        code, pre {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .math-text {
+            font-family: 'Times New Roman', Times, serif;
+            font-style: italic;
+        }
+        
+        canvas {
+            border: 1px solid #e2e8f0;
+            background-color: #ffffff;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        /* Estilos personalizados para el slider */
+        input[type=range]::-webkit-slider-thumb {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #2563eb;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center py-10 px-4 sm:px-8">
+
+    <div class="max-w-5xl w-full bg-white shadow-xl rounded-2xl overflow-hidden">
+        
+        <!-- Header -->
+        <header class="bg-indigo-900 text-white p-8">
+            <h1 class="text-3xl font-bold mb-2">Métodos Numéricos: Integración</h1>
+            <h2 class="text-xl text-indigo-200">Reglas de Simpson 1/3 y 3/8</h2>
+            <p class="mt-4 text-sm text-indigo-300">Suite de Laboratorios Interactivos | Ingeniería en Computación</p>
+        </header>
+
+        <!-- Contenido Principal -->
+        <main class="p-8 space-y-12">
+            
+            <!-- Sección de Teoría -->
+            <section>
+                <h3 class="text-2xl font-semibold text-indigo-700 border-b-2 border-indigo-100 pb-2 mb-4">1. Fundamento Teórico</h3>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 text-gray-700">
+                    <div>
+                        <h4 class="font-bold text-lg text-indigo-800 mb-2">Regla de Simpson 1/3</h4>
+                        <p class="mb-4 text-sm">
+                            Sustituye la función objetivo por <strong>polinomios de segundo grado (parábolas)</strong>. 
+                            Requiere 3 puntos para definir cada parábola, por lo que el número de segmentos \(n\) <strong>debe ser siempre par</strong>.
+                        </p>
+                        <div class="bg-slate-100 p-4 rounded-lg text-center overflow-x-auto text-sm">
+                            $$ I \approx \frac{h}{3} \left[ f(x_0) + 4\sum_{i=1, 3, 5}^{n-1} f(x_i) + 2\sum_{j=2, 4, 6}^{n-2} f(x_j) + f(x_n) \right] $$
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-lg text-indigo-800 mb-2">Regla de Simpson 3/8</h4>
+                        <p class="mb-4 text-sm">
+                            Utiliza <strong>polinomios de tercer grado (cúbicos)</strong> para la interpolación. 
+                            Como requiere 4 puntos por curva, el número de segmentos \(n\) <strong>debe ser múltiplo de 3</strong>.
+                        </p>
+                        <div class="bg-slate-100 p-4 rounded-lg text-center overflow-x-auto text-sm">
+                            $$ I \approx \frac{3h}{8} \left[ f(x_0) + 3\sum_{i \neq 3k} f(x_i) + 2\sum_{j = 3k} f(x_j) + f(x_n) \right] $$
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sección Interactiva -->
+            <section class="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                <h3 class="text-2xl font-semibold text-indigo-700 mb-6">2. Laboratorio Virtual</h3>
+                
+                <div class="flex flex-col lg:flex-row gap-8">
+                    <!-- Controles y Resultados -->
+                    <div class="w-full lg:w-1/3 flex flex-col justify-between space-y-4">
+                        
+                        <!-- Panel de Ecuación -->
+                        <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                            <label for="func-input" class="block text-sm font-bold text-gray-700 mb-1">Función f(x):</label>
+                            <input type="text" id="func-input" value="10 + 2*sin(x) * exp(0.2*x)" class="w-full p-2 border border-gray-300 rounded mb-3 font-mono text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                            
+                            <div class="flex gap-4 mb-2">
+                                <div class="w-1/2">
+                                    <label class="block text-xs font-bold text-gray-700 mb-1">Límite a:</label>
+                                    <input type="number" id="limit-a" value="0" step="any" class="w-full p-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                                </div>
+                                <div class="w-1/2">
+                                    <label class="block text-xs font-bold text-gray-700 mb-1">Límite b:</label>
+                                    <input type="number" id="limit-b" value="8" step="any" class="w-full p-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                                </div>
+                            </div>
+                            <div class="text-center mt-3 h-12 flex items-center justify-center overflow-x-auto">
+                                <span id="math-display" class="text-base text-indigo-700"></span>
+                            </div>
+                        </div>
+                        
+                        <!-- Panel de Método -->
+                        <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Método de Integración:</label>
+                            <select id="method-select" class="w-full p-2 border border-gray-300 rounded mb-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                                <option value="13">Simpson 1/3 (Requiere 'n' par)</option>
+                                <option value="38">Simpson 3/8 (Requiere 'n' múltiplo de 3)</option>
+                            </select>
+
+                            <label class="block text-sm font-bold text-gray-700 mb-2">
+                                Número de segmentos n = <span id="n-value" class="text-indigo-600 text-lg">2</span>
+                            </label>
+                            <input type="range" id="segments" min="2" max="30" step="2" value="2" class="w-full h-2 bg-indigo-100 rounded-lg appearance-none cursor-pointer">
+                            <p class="text-xs text-gray-500 mt-2 italic" id="n-warning">El deslizador se ajusta automáticamente a números pares.</p>
+                        </div>
+
+                        <!-- Panel de Resultados -->
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="bg-gray-100 p-3 rounded border border-gray-200 col-span-2">
+                                <p class="text-[10px] text-gray-500 uppercase font-bold">Área Analítica (Alta Precisión)</p>
+                                <p class="text-lg font-mono text-gray-800" id="true-area">0.00000</p>
+                            </div>
+                            <div class="bg-indigo-50 p-3 rounded border border-indigo-200">
+                                <p class="text-[10px] text-indigo-600 uppercase font-bold">Área Estimada</p>
+                                <p class="text-lg font-mono text-indigo-800" id="est-area">0.00000</p>
+                            </div>
+                            <div class="bg-rose-50 p-3 rounded border border-rose-200">
+                                <p class="text-[10px] text-rose-600 uppercase font-bold">Error Relativo</p>
+                                <p class="text-lg font-mono text-rose-800" id="error-val">0.00%</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Canvas -->
+                    <div class="w-full lg:w-2/3 bg-white p-2 rounded-xl border border-gray-200">
+                        <canvas id="graphCanvas" width="600" height="400" class="w-full h-auto bg-white rounded-lg"></canvas>
+                        <p class="text-center text-xs text-gray-500 mt-2 flex items-center justify-center gap-4">
+                            <span><span class="inline-block w-3 h-3 bg-[#1e293b] rounded-full align-middle"></span> Función real</span>
+                            <span><span class="inline-block w-3 h-3 bg-indigo-400 opacity-50 rounded-full align-middle"></span> Polinomio interpolador (Simpson)</span>
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sección de Código Python -->
+            <section>
+                <h3 class="text-2xl font-semibold text-indigo-700 border-b-2 border-indigo-100 pb-2 mb-4">3. Implementación Vectorizada en Python</h3>
+                <p class="text-gray-700 mb-4 text-sm">
+                    A continuación, se presentan ambas reglas implementadas en Python aprovechando las bondades del <em>slicing</em> de arreglos en <code>numpy</code>. Esta técnica evita usar bucles pesados, logrando una ejecución matemática mucho más rápida.
+                </p>
+                <div class="bg-[#1e1e1e] rounded-lg overflow-hidden shadow-lg">
+                    <div class="bg-[#2d2d2d] px-4 py-2 text-xs text-gray-400 font-mono flex justify-between items-center">
+                        <span>simpson_methods.py</span>
+                        <button onclick="copyCode()" class="hover:text-white transition-colors bg-indigo-600 px-3 py-1 rounded text-white font-semibold">Copiar Código</button>
+                    </div>
+<pre class="text-sm p-6 overflow-x-auto text-gray-300"><code id="python-code"><span class="text-blue-400">import</span> numpy <span class="text-blue-400">as</span> np
+
+<span class="text-blue-400">def</span> <span class="text-yellow-200">simpson_13_multiple</span>(f, a, b, n):
+    <span class="text-green-400">"""Implementación de la Regla de Simpson 1/3 de segmentos múltiples."""</span>
+    <span class="text-blue-400">if</span> n % <span class="text-orange-300">2</span> != <span class="text-orange-300">0</span>:
+        <span class="text-blue-400">raise</span> <span class="text-cyan-300">ValueError</span>(<span class="text-orange-300">"Para Simpson 1/3, el número de segmentos (n) debe ser par."</span>)
+    
+    h = (b - a) / n
+    x = np.linspace(a, b, n + 1)
+    y = f(x)
+    
+    <span class="text-gray-400"># y[1:-1:2] toma los índices impares, y[2:-2:2] toma los pares</span>
+    suma = y[0] + y[-1] + 4 * np.sum(y[1:-1:2]) + 2 * np.sum(y[2:-2:2])
+    <span class="text-blue-400">return</span> (h / 3) * suma
+
+<span class="text-blue-400">def</span> <span class="text-yellow-200">simpson_38_multiple</span>(f, a, b, n):
+    <span class="text-green-400">"""Implementación de la Regla de Simpson 3/8 de segmentos múltiples."""</span>
+    <span class="text-blue-400">if</span> n % <span class="text-orange-300">3</span> != <span class="text-orange-300">0</span>:
+        <span class="text-blue-400">raise</span> <span class="text-cyan-300">ValueError</span>(<span class="text-orange-300">"Para Simpson 3/8, el número de segmentos (n) debe ser múltiplo de 3."</span>)
+        
+    h = (b - a) / n
+    x = np.linspace(a, b, n + 1)
+    y = f(x)
+    
+    <span class="text-gray-400"># Máscara booleana para encontrar los índices que NO son múltiplos de 3</span>
+    indices = np.arange(1, n)
+    multiplos_de_3 = (indices % 3 == 0)
+    no_multiplos = ~multiplos_de_3
+    
+    suma = y[0] + y[-1] + 3 * np.sum(y[indices[no_multiplos]]) + 2 * np.sum(y[indices[multiplos_de_3]])
+    <span class="text-blue-400">return</span> (3 * h / 8) * suma
+
+<span class="text-gray-400"># --- Ejemplo de uso ---</span>
+<span class="text-blue-400">if</span> __name__ == <span class="text-orange-300">"__main__"</span>:
+    <span class="text-gray-400"># Definimos f(x) usando numpy para soporte vectorial</span>
+    <span class="text-yellow-200">f</span> = <span class="text-blue-400">lambda</span> x: 10 + 2 * np.sin(x) * np.exp(0.2 * x)
+    
+    a, b = 0.0, 8.0
+    
+    res_13 = simpson_13_multiple(f, a, b, 6)   <span class="text-gray-400"># n=6 (es par)</span>
+    res_38 = simpson_38_multiple(f, a, b, 6)   <span class="text-gray-400"># n=6 (es múltiplo de 3)</span>
+    
+    <span class="text-cyan-300">print</span>(<span class="text-orange-300">f"Área (Simpson 1/3) : </span>{res_13<span class="text-blue-400">:.5f</span>}<span class="text-orange-300">"</span>)
+    <span class="text-cyan-300">print</span>(<span class="text-orange-300">f"Área (Simpson 3/8) : </span>{res_38<span class="text-blue-400">:.5f</span>}<span class="text-orange-300">"</span>)
+</code></pre>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // CORE: Funcionalidad Matemática y Gráfica
+        const canvas = document.getElementById('graphCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Elementos de UI
+        const funcInput = document.getElementById('func-input');
+        const limitAInput = document.getElementById('limit-a');
+        const limitBInput = document.getElementById('limit-b');
+        const methodSelect = document.getElementById('method-select');
+        const slider = document.getElementById('segments');
+        
+        // Etiquetas
+        const mathDisplay = document.getElementById('math-display');
+        const nValueLabel = document.getElementById('n-value');
+        const nWarningLabel = document.getElementById('n-warning');
+        const trueAreaLabel = document.getElementById('true-area');
+        const estAreaLabel = document.getElementById('est-area');
+        const errorLabel = document.getElementById('error-val');
+
+        let compiledFunc;
+        let a = 0.0, b = 8.0;
+        let trueArea = 0;
+        let method = "13";
+
+        // Coordenadas lógicas
+        let logicalMinX = 0, logicalMaxX = 10;
+        let logicalMinY = 0, logicalMaxY = 9;
+
+        // 1. EVALUACIÓN Y PARSEO MATEMÁTICO
+        function parseFunction() {
+            try {
+                const expr = funcInput.value;
+                compiledFunc = math.compile(expr);
+                
+                let tex = math.parse(expr).toTex();
+                katex.render("f(x) = " + tex, mathDisplay, { throwOnError: false, displayMode: true });
+
+                a = parseFloat(limitAInput.value);
+                b = parseFloat(limitBInput.value);
+                
+                if (isNaN(a) || isNaN(b) || a >= b) throw new Error("Límites inválidos");
+
+                // Área verdadera calculada con integración numérica de extrema alta fidelidad
+                trueArea = calculateHighPrecisionIntegral();
+                trueAreaLabel.innerText = trueArea.toFixed(5);
+
+                calculateBounds();
+                update();
+            } catch (err) {
+                mathDisplay.innerHTML = `<span class="text-red-500 text-sm font-sans">Ecuación o límites no válidos</span>`;
+            }
+        }
+
+        function f(x) {
+            try { return compiledFunc.evaluate({x: x}); } 
+            catch (e) { return 0; }
+        }
+
+        function calculateHighPrecisionIntegral() {
+            // Simpson 1/3 con 20,000 segmentos como 'Ground Truth'
+            let n = 20000;
+            const h = (b - a) / n;
+            let sum = f(a) + f(b);
+            for (let i = 1; i < n; i++) {
+                sum += f(a + i * h) * (i % 2 === 0 ? 2 : 4);
+            }
+            return (h / 3) * sum;
+        }
+
+        // 2. LÓGICA DE CONTROL DE INTERFAZ
+        function handleMethodChange() {
+            method = methodSelect.value;
+            let currentVal = parseInt(slider.value);
+            
+            if (method === "13") {
+                slider.step = 2;
+                slider.min = 2;
+                nWarningLabel.innerText = "El deslizador se ajusta automáticamente a números pares (n par).";
+                if (currentVal % 2 !== 0) slider.value = currentVal + 1;
+            } else {
+                slider.step = 3;
+                slider.min = 3;
+                nWarningLabel.innerText = "El deslizador se ajusta automáticamente a múltiplos de 3.";
+                if (currentVal % 3 !== 0) slider.value = currentVal + (3 - (currentVal % 3));
+            }
+            update();
+        }
+
+        // 3. MÉTODOS NUMÉRICOS Y DIBUJO DE ÁREAS
+        
+        // Interpolación de Lagrange para n puntos (permite dibujar las parábolas/cúbicas)
+        function lagrangeInterpolate(x, points) {
+            let result = 0;
+            for (let i = 0; i < points.length; i++) {
+                let term = points[i].y;
+                for (let j = 0; j < points.length; j++) {
+                    if (i !== j) {
+                        term = term * (x - points[j].x) / (points[i].x - points[j].x);
+                    }
+                }
+                result += term;
+            }
+            return result;
+        }
+
+        function drawSimpsonAreasAndCalculate(n) {
+            const h = (b - a) / n;
+            let estimatedArea = 0;
+            let pointsY = [];
+            
+            // Pre-calcular valores
+            for(let i=0; i<=n; i++) pointsY.push(f(a + i * h));
+
+            ctx.lineWidth = 1.5;
+            
+            if (method === "13") {
+                // SIMPSON 1/3 (Parábolas, tramos de 2 segmentos / 3 puntos)
+                for (let i = 0; i < n; i += 2) {
+                    const p0 = {x: a + i*h, y: pointsY[i]};
+                    const p1 = {x: a + (i+1)*h, y: pointsY[i+1]};
+                    const p2 = {x: a + (i+2)*h, y: pointsY[i+2]};
+                    const points = [p0, p1, p2];
+
+                    // Matemáticas (Área)
+                    estimatedArea += (h / 3) * (p0.y + 4 * p1.y + p2.y);
+
+                    // Gráficos (Rellenar polinomio)
+                    drawInterpolatedRegion(p0.x, p2.x, points, 'rgba(99, 102, 241, 0.2)', '#4f46e5'); // Indigo
+                }
+            } else {
+                // SIMPSON 3/8 (Cúbicas, tramos de 3 segmentos / 4 puntos)
+                for (let i = 0; i < n; i += 3) {
+                    const p0 = {x: a + i*h, y: pointsY[i]};
+                    const p1 = {x: a + (i+1)*h, y: pointsY[i+1]};
+                    const p2 = {x: a + (i+2)*h, y: pointsY[i+2]};
+                    const p3 = {x: a + (i+3)*h, y: pointsY[i+3]};
+                    const points = [p0, p1, p2, p3];
+
+                    // Matemáticas (Área)
+                    estimatedArea += (3 * h / 8) * (p0.y + 3 * p1.y + 3 * p2.y + p3.y);
+
+                    // Gráficos (Rellenar polinomio)
+                    drawInterpolatedRegion(p0.x, p3.x, points, 'rgba(14, 165, 233, 0.2)', '#0284c7'); // Sky Blue
+                }
+            }
+
+            // Dibujar los nodos sobre las áreas
+            ctx.fillStyle = '#dc2626'; // Red
+            for(let i=0; i<=n; i++) {
+                ctx.beginPath();
+                ctx.arc(mapX(a + i*h), mapY(pointsY[i]), 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            return estimatedArea;
+        }
+
+        function drawInterpolatedRegion(startX, endX, controlPoints, fillColor, strokeColor) {
+            ctx.beginPath();
+            ctx.fillStyle = fillColor;
+            ctx.strokeStyle = strokeColor;
+            
+            // Base inferior
+            ctx.moveTo(mapX(startX), mapY(0));
+            ctx.lineTo(mapX(startX), mapY(controlPoints[0].y));
+            
+            // Dibujar curva de interpolación
+            const curveSteps = 30; // Suavidad de la curva dibujada
+            const stepX = (endX - startX) / curveSteps;
+            
+            for (let j = 1; j <= curveSteps; j++) {
+                const currX = startX + j * stepX;
+                const currY = lagrangeInterpolate(currX, controlPoints);
+                ctx.lineTo(mapX(currX), mapY(currY));
+            }
+            
+            // Cerrar región
+            ctx.lineTo(mapX(endX), mapY(0));
+            ctx.closePath();
+            
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        // 4. LÓGICA DEL CANVAS Y RENDERIZADO
+        function calculateBounds() {
+            let minY = Infinity, maxY = -Infinity;
+            const steps = 200;
+            const h = (b - a) / steps;
+            
+            for(let i=0; i<=steps; i++) {
+                const y = f(a + i * h);
+                if(isFinite(y)) {
+                    if (y < minY) minY = y;
+                    if (y > maxY) maxY = y;
+                }
+            }
+            
+            if (minY > 0 && minY < (maxY - minY)) minY = 0;
+            if (maxY < 0 && Math.abs(maxY) < (maxY - minY)) maxY = 0;
+
+            const yRange = (maxY - minY) || 10;
+            logicalMinY = minY - yRange * 0.15;
+            logicalMaxY = maxY + yRange * 0.15;
+            
+            const xRange = b - a;
+            logicalMinX = a - xRange * 0.1;
+            logicalMaxX = b + xRange * 0.1;
+        }
+
+        function mapX(x) { return (x - logicalMinX) / (logicalMaxX - logicalMinX) * canvas.width; }
+        function mapY(y) { return canvas.height - ((y - logicalMinY) / (logicalMaxY - logicalMinY) * canvas.height); }
+
+        function drawAxes() {
+            ctx.beginPath();
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 1;
+            
+            const y0 = mapY(0);
+            if(y0 >= 0 && y0 <= canvas.height) { ctx.moveTo(0, y0); ctx.lineTo(canvas.width, y0); }
+            
+            const x0 = mapX(0);
+            if(x0 >= 0 && x0 <= canvas.width) { ctx.moveTo(x0, 0); ctx.lineTo(x0, canvas.height); }
+            ctx.stroke();
+
+            ctx.fillStyle = '#64748b';
+            ctx.font = '12px Inter';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            
+            const step = (b - a) / 8;
+            for(let i=0; i<=8; i++) {
+                const tickX = a + i * step;
+                const canvasX = mapX(tickX);
+                let textY = y0 + 5;
+                if(y0 > canvas.height) textY = canvas.height - 20;
+                else if (y0 < 0) textY = 5;
+
+                ctx.fillText(tickX.toFixed(1), canvasX, textY);
+                ctx.beginPath(); ctx.moveTo(canvasX, y0); ctx.lineTo(canvasX, y0 - 5); ctx.stroke();
+            }
+        }
+
+        function drawRealCurve() {
+            ctx.beginPath();
+            ctx.strokeStyle = '#1e293b'; // Slate 800 - Curva original
+            ctx.lineWidth = 2.5;
+            
+            const steps = 300;
+            const h = (logicalMaxX - logicalMinX) / steps;
+            
+            let first = true;
+            for (let i=0; i<=steps; i++) {
+                const x = logicalMinX + i * h;
+                const px = mapX(x);
+                const py = mapY(f(x));
+                
+                if(isFinite(py)) {
+                    if (first) { ctx.moveTo(px, py); first = false; } 
+                    else { ctx.lineTo(px, py); }
+                }
+            }
+            ctx.stroke();
+        }
+
+        function update() {
+            const n = parseInt(slider.value);
+            nValueLabel.innerText = n;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawAxes();
+            
+            const estArea = drawSimpsonAreasAndCalculate(n);
+            drawRealCurve(); // Dibujar curva real encima de las áreas para claridad
+            
+            estAreaLabel.innerText = estArea.toFixed(5);
+            
+            if (Math.abs(trueArea) > 1e-10) {
+                const error = Math.abs((trueArea - estArea) / trueArea) * 100;
+                errorLabel.innerText = error.toFixed(5) + "%";
+            } else {
+                errorLabel.innerText = "N/A";
+            }
+        }
+
+        // Listeners
+        slider.addEventListener('input', update);
+        methodSelect.addEventListener('change', handleMethodChange);
+        funcInput.addEventListener('input', parseFunction);
+        limitAInput.addEventListener('input', parseFunction);
+        limitBInput.addEventListener('input', parseFunction);
+
+        function copyCode() {
+            const code = document.getElementById('python-code').innerText;
+            navigator.clipboard.writeText(code).then(() => {
+                alert("Código Python copiado al portapapeles.");
+            });
+        }
+
+        // Init
+        handleMethodChange(); // Setup inicial del slider
+        parseFunction();
+    </script>
+</body>
+</html>

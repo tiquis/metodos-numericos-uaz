@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raíces de Ecuaciones: Bisección y Newton-Raphson</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Integración de KaTeX para tipografía matemática -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+    
+    <!-- Librería math.js para derivación simbólica y evaluación -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.js"></script>
+    
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '\\(', right: '\\)', display: false},
+                    {left: '\\[', right: '\\]', display: true}
+                ],
+                throwOnError : false
+            });
+        });
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #0f172a; }
+        code, pre { font-family: 'JetBrains Mono', monospace; }
+
+        canvas {
+            border: 1px solid #e2e8f0;
+            background-color: #ffffff;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Estilos para el slider (Tema Ámbar) */
+        input[type=range]::-webkit-slider-thumb {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #d97706; /* amber-600 */
+            cursor: pointer;
+            border: 2px solid #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+
+        /* Tabla de Raíces */
+        .roots-table th {
+            position: sticky; top: 0; background-color: #fffbeb; /* amber-50 */ color: #92400e; /* amber-800 */ z-index: 10;
+        }
+        .roots-table td, .roots-table th {
+            border-bottom: 1px solid #e5e7eb; padding: 0.5rem; text-align: center; font-size: 0.875rem;
+        }
+        .roots-table .mono { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+        .active-row { background-color: #fef3c7; /* amber-100 */ font-weight: bold; border-left: 4px solid #d97706; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center py-10 px-4 sm:px-8">
+
+    <div class="max-w-7xl w-full bg-white shadow-xl rounded-2xl overflow-hidden">
+        
+        <!-- Header UAZ Theme / Amber -->
+        <header class="bg-amber-600 text-white p-8 relative overflow-hidden">
+            <div class="relative z-10">
+                <h1 class="text-3xl font-bold mb-2">Métodos Numéricos: Raíces de Ecuaciones</h1>
+                <h2 class="text-xl text-amber-100">Métodos de Intervalos (Bisección) y Abiertos (Newton-Raphson)</h2>
+                <p class="mt-4 text-sm text-amber-200 font-medium">Conforme al Programa Analítico IC - UAZ | Basado en Chapra & Canale</p>
+            </div>
+            <!-- Decoración de fondo -->
+            <div class="absolute -right-10 -top-10 opacity-20 pointer-events-none">
+                <svg width="300" height="300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"/><polyline points="14 2 14 8 20 8"/><path d="M2 15h10"/><path d="m9 18 3-3-3-3"/></svg>
+            </div>
+        </header>
+
+        <!-- Contenido Principal -->
+        <main class="p-8 space-y-10">
+            
+            <!-- Teoría -->
+            <section>
+                <h3 class="text-2xl font-semibold text-amber-700 border-b-2 border-amber-200 pb-2 mb-4">1. Fundamento Teórico</h3>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 text-gray-700">
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                        <h4 class="font-bold text-lg text-amber-800 mb-2">Métodos que usan Intervalos (Bisección)</h4>
+                        <p class="mb-3 text-sm text-gray-600">
+                            Requieren dos valores iniciales \(x_l\) y \(x_u\) que "encierren" a la raíz, de forma que \(f(x_l) \cdot f(x_u) < 0\). 
+                            El método divide el intervalo a la mitad iterativamente. <strong>Siempre converge</strong>, pero es lento.
+                        </p>
+                        <div class="bg-slate-50 p-2 rounded text-center overflow-x-auto text-sm border border-slate-200">
+                            $$ x_r = \frac{x_l + x_u}{2} $$
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                        <h4 class="font-bold text-lg text-amber-800 mb-2">Métodos Abiertos (Newton-Raphson)</h4>
+                        <p class="mb-3 text-sm text-gray-600">
+                            Requieren un solo valor inicial \(x_0\). Trazan la recta tangente a la función en \(x_i\) y cruzan el eje X para encontrar el siguiente punto. 
+                            <strong>Convergen muy rápido (cuadráticamente)</strong>, pero pueden divergir si la derivada es cero o cercana a cero.
+                        </p>
+                        <div class="bg-amber-50 p-2 rounded text-center overflow-x-auto text-sm border border-amber-200">
+                            $$ x_{i+1} = x_i - \frac{f(x_i)}{f'(x_i)} $$
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Laboratorio -->
+            <section class="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                <h3 class="text-2xl font-semibold text-amber-700 mb-6">2. Laboratorio Interactivo de Convergencia</h3>
+                
+                <div class="flex flex-col xl:flex-row gap-6">
+                    <!-- Controles -->
+                    <div class="w-full xl:w-1/3 flex flex-col space-y-4">
+                        
+                        <!-- Panel de Ecuación -->
+                        <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Función f(x):</label>
+                            <!-- Función clásica de Chapra: e^-x - x -->
+                            <input type="text" id="func-input" value="exp(-x) - x" class="w-full p-2 border border-gray-300 rounded mb-2 font-mono text-sm focus:ring-2 focus:ring-amber-500 outline-none">
+                            
+                            <div class="text-center h-16 flex flex-col items-center justify-center overflow-x-auto bg-slate-50 rounded px-2">
+                                <span id="math-display" class="text-sm text-amber-700"></span>
+                                <span id="deriv-display" class="text-xs text-slate-500 mt-1"></span>
+                            </div>
+                        </div>
+
+                        <!-- Selector de Método -->
+                        <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Método de Búsqueda:</label>
+                            <select id="method-select" class="w-full p-2 border border-amber-400 rounded mb-4 text-sm focus:ring-2 focus:ring-amber-500 outline-none bg-amber-50 text-amber-900 font-semibold cursor-pointer">
+                                <option value="bisection">Método de Bisección (Cerrado)</option>
+                                <option value="newton" selected>Newton-Raphson (Abierto)</option>
+                            </select>
+
+                            <!-- Inputs Dinámicos -->
+                            <div id="inputs-bisection" class="hidden">
+                                <h4 class="text-xs font-bold text-gray-600 mb-2 uppercase tracking-wide">Valores Iniciales (Intervalo)</h4>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs text-gray-600 mb-1">Inferior (x_l):</label>
+                                        <input type="number" id="xl-val" value="0" step="any" class="w-full p-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-amber-500 outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-600 mb-1">Superior (x_u):</label>
+                                        <input type="number" id="xu-val" value="1" step="any" class="w-full p-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-amber-500 outline-none">
+                                    </div>
+                                </div>
+                                <p id="bracket-warning" class="text-xs text-red-600 mt-2 hidden font-bold">¡El intervalo no encierra la raíz! f(x_l) * f(x_u) > 0</p>
+                            </div>
+
+                            <div id="inputs-newton" class="block">
+                                <h4 class="text-xs font-bold text-gray-600 mb-2 uppercase tracking-wide">Valor Inicial</h4>
+                                <div>
+                                    <label class="block text-xs text-gray-600 mb-1">x₀ (Estimación inicial):</label>
+                                    <input type="number" id="x0-val" value="0" step="any" class="w-full p-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-amber-500 outline-none">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Panel de Navegación de Iteraciones (MÁQUINA DEL TIEMPO) -->
+                        <div class="bg-white p-4 rounded-lg border border-amber-300 shadow-md relative overflow-hidden">
+                            <div class="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">
+                                Analizador Paso a Paso: Iteración <span id="iter-label" class="text-amber-600 text-xl font-black">0</span>
+                            </label>
+                            <input type="range" id="iter-slider" min="0" max="10" step="1" value="0" class="w-full h-2 bg-slate-200 rounded-lg appearance-none mb-2">
+                            <div class="flex justify-between text-xs text-gray-500 mt-1 font-mono">
+                                <span>Inicio</span>
+                                <span id="max-iter-label">Max Iter</span>
+                            </div>
+                            
+                            <!-- Resultados Actuales -->
+                            <div class="mt-4 bg-slate-50 p-3 rounded border border-slate-200">
+                                <p class="text-xs text-slate-500 uppercase tracking-wide font-bold">Raíz Estimada (x_r / x_{i+1}):</p>
+                                <p class="text-2xl font-mono text-amber-700 font-bold" id="current-root">0.000000</p>
+                                <div class="flex justify-between mt-2 pt-2 border-t border-slate-200">
+                                    <span class="text-xs font-bold text-gray-600">Error aprox (\(E_a\)):</span>
+                                    <span class="text-xs font-mono font-bold text-rose-600" id="current-error">-- %</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gráfico y Tabla -->
+                    <div class="w-full xl:w-2/3 flex flex-col space-y-4">
+                        <!-- Canvas -->
+                        <div class="bg-white p-2 rounded-xl border border-gray-200 shadow-sm relative">
+                            <canvas id="graphCanvas" width="700" height="350" class="w-full h-auto bg-white rounded-lg"></canvas>
+                            <div class="absolute top-4 right-4 bg-white/90 p-2 rounded shadow text-xs border border-gray-200 font-mono">
+                                <span class="flex items-center gap-1 mb-1"><span class="w-3 h-3 bg-slate-900 rounded-full block"></span> f(x)</span>
+                                <span class="flex items-center gap-1 mb-1"><span class="w-3 h-3 bg-amber-500 rounded block"></span> Raíz Evaluada</span>
+                                <span id="legend-bisection" class="hidden flex-col gap-1">
+                                    <span class="flex items-center gap-1"><span class="w-3 h-[2px] bg-blue-500 block"></span> Límites xl, xu</span>
+                                </span>
+                                <span id="legend-newton" class="flex-col gap-1 block">
+                                    <span class="flex items-center gap-1"><span class="w-3 h-[2px] bg-rose-500 block"></span> Recta Tangente</span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Tabla -->
+                        <div class="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col h-48 overflow-hidden">
+                            <div class="overflow-y-auto flex-grow">
+                                <table class="roots-table w-full" id="roots-table-ui">
+                                    <!-- Generada por JS -->
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Código Python -->
+            <section>
+                <h3 class="text-2xl font-semibold text-amber-700 border-b-2 border-amber-100 pb-2 mb-4">3. Implementación en Python</h3>
+                <p class="text-gray-700 mb-4 text-sm">
+                    Implementación orientada a ingeniería que incluye el cálculo del error relativo aproximado \(E_a\) y una condición de paro por tolerancia, previniendo bucles infinitos.
+                </p>
+                <div class="bg-[#1e1e1e] rounded-lg overflow-hidden shadow-lg">
+                    <div class="bg-[#2d2d2d] px-4 py-2 text-xs text-gray-400 font-mono flex justify-between items-center">
+                        <span>raices_ecuaciones.py</span>
+                        <button onclick="copyCode()" class="hover:text-white transition-colors bg-amber-600 px-3 py-1 rounded text-white font-semibold">Copiar Código</button>
+                    </div>
+<pre class="text-sm p-6 overflow-x-auto text-gray-300"><code id="python-code"><span class="text-blue-400">import</span> math
+
+<span class="text-blue-400">def</span> <span class="text-yellow-200">biseccion</span>(f, xl, xu, tol=<span class="text-orange-300">1e-6</span>, max_iter=<span class="text-orange-300">50</span>):
+    <span class="text-green-400">"""Encuentra la raíz de f(x) mediante el método de bisección."""</span>
+    <span class="text-blue-400">if</span> f(xl) * f(xu) >= <span class="text-orange-300">0</span>:
+        <span class="text-blue-400">raise</span> <span class="text-cyan-300">ValueError</span>(<span class="text-orange-300">"El intervalo no encierra una raíz (f(xl) * f(xu) >= 0)."</span>)
+        
+    xr = xl
+    xr_old = xl
+    
+    <span class="text-cyan-300">print</span>(<span class="text-orange-300">f"</span>{<span class="text-orange-300">'Iter'</span><span class="text-blue-400">:&lt;5</span>}{<span class="text-orange-300">'xl'</span><span class="text-blue-400">:&lt;12</span>}{<span class="text-orange-300">'xu'</span><span class="text-blue-400">:&lt;12</span>}{<span class="text-orange-300">'xr'</span><span class="text-blue-400">:&lt;12</span>}{<span class="text-orange-300">'Ea(%)'</span><span class="text-blue-400">:&lt;10</span>}<span class="text-orange-300">"</span>)
+    
+    <span class="text-blue-400">for</span> i <span class="text-blue-400">in</span> <span class="text-cyan-300">range</span>(max_iter):
+        xr_old = xr
+        xr = (xl + xu) / <span class="text-orange-300">2</span>
+        
+        ea = <span class="text-orange-300">100.0</span> <span class="text-blue-400">if</span> i == <span class="text-orange-300">0</span> <span class="text-blue-400">else</span> <span class="text-cyan-300">abs</span>((xr - xr_old) / xr) * <span class="text-orange-300">100</span>
+        
+        <span class="text-cyan-300">print</span>(<span class="text-orange-300">f"</span>{i+1<span class="text-blue-400">:&lt;5</span>}{xl<span class="text-blue-400">:&lt;12.6f</span>}{xu<span class="text-blue-400">:&lt;12.6f</span>}{xr<span class="text-blue-400">:&lt;12.6f</span>}{ea<span class="text-blue-400">:&lt;10.4f</span>}<span class="text-orange-300">"</span>)
+        
+        test = f(xl) * f(xr)
+        <span class="text-blue-400">if</span> test < <span class="text-orange-300">0</span>:
+            xu = xr
+        <span class="text-blue-400">elif</span> test > <span class="text-orange-300">0</span>:
+            xl = xr
+        <span class="text-blue-400">else</span>:
+            ea = <span class="text-orange-300">0.0</span>  <span class="text-gray-400"># Raíz exacta encontrada</span>
+            
+        <span class="text-blue-400">if</span> ea < tol:
+            <span class="text-blue-400">break</span>
+            
+    <span class="text-blue-400">return</span> xr
+
+<span class="text-blue-400">def</span> <span class="text-yellow-200">newton_raphson</span>(f, df, x0, tol=<span class="text-orange-300">1e-6</span>, max_iter=<span class="text-orange-300">50</span>):
+    <span class="text-green-400">"""Encuentra la raíz de f(x) dado f'(x) mediante Newton-Raphson."""</span>
+    xi = x0
+    
+    <span class="text-cyan-300">print</span>(<span class="text-orange-300">f"\n</span>{<span class="text-orange-300">'Iter'</span><span class="text-blue-400">:&lt;5</span>}{<span class="text-orange-300">'xi'</span><span class="text-blue-400">:&lt;12</span>}{<span class="text-orange-300">'f(xi)'</span><span class="text-blue-400">:&lt;12</span>}{<span class="text-orange-300">f'f\\'</span>(xi)<span class="text-orange-300">'</span><span class="text-blue-400">:&lt;12</span>}{<span class="text-orange-300">'Ea(%)'</span><span class="text-blue-400">:&lt;10</span>}<span class="text-orange-300">"</span>)
+    
+    <span class="text-blue-400">for</span> i <span class="text-blue-400">in</span> <span class="text-cyan-300">range</span>(max_iter):
+        f_val = f(xi)
+        df_val = df(xi)
+        
+        <span class="text-blue-400">if</span> df_val == <span class="text-orange-300">0</span>:
+            <span class="text-blue-400">raise</span> <span class="text-cyan-300">ZeroDivisionError</span>(<span class="text-orange-300">"Derivada cero. El método falla."</span>)
+            
+        xi_next = xi - f_val / df_val
+        ea = <span class="text-cyan-300">abs</span>((xi_next - xi) / xi_next) * <span class="text-orange-300">100</span>
+        
+        <span class="text-cyan-300">print</span>(<span class="text-orange-300">f"</span>{i+1<span class="text-blue-400">:&lt;5</span>}{xi<span class="text-blue-400">:&lt;12.6f</span>}{f_val<span class="text-blue-400">:&lt;12.6f</span>}{df_val<span class="text-blue-400">:&lt;12.6f</span>}{ea<span class="text-blue-400">:&lt;10.4f</span>}<span class="text-orange-300">"</span>)
+        
+        xi = xi_next
+        <span class="text-blue-400">if</span> ea < tol:
+            <span class="text-blue-400">break</span>
+            
+    <span class="text-blue-400">return</span> xi
+
+<span class="text-gray-400"># --- Ejemplo de Ejecución ---</span>
+<span class="text-blue-400">if</span> __name__ == <span class="text-orange-300">"__main__"</span>:
+    <span class="text-gray-400"># f(x) = e^(-x) - x</span>
+    <span class="text-yellow-200">f</span> = <span class="text-blue-400">lambda</span> x: math.exp(-x) - x
+    <span class="text-yellow-200">df</span> = <span class="text-blue-400">lambda</span> x: -math.exp(-x) - <span class="text-orange-300">1</span>
+    
+    raiz_bis = biseccion(f, xl=<span class="text-orange-300">0.0</span>, xu=<span class="text-orange-300">1.0</span>)
+    <span class="text-cyan-300">print</span>(<span class="text-orange-300">f"Raíz por Bisección: </span>{raiz_bis<span class="text-blue-400">:.6f</span>}<span class="text-orange-300">"</span>)
+    
+    raiz_nr = newton_raphson(f, df, x0=<span class="text-orange-300">0.0</span>)
+    <span class="text-cyan-300">print</span>(<span class="text-orange-300">f"Raíz por Newton-Raphson: </span>{raiz_nr<span class="text-blue-400">:.6f</span>}<span class="text-orange-300">"</span>)
+</code></pre>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // CORE: Funcionalidad Matemática
+        const canvas = document.getElementById('graphCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        const funcInput = document.getElementById('func-input');
+        const methodSelect = document.getElementById('method-select');
+        const xlInput = document.getElementById('xl-val');
+        const xuInput = document.getElementById('xu-val');
+        const x0Input = document.getElementById('x0-val');
+        const iterSlider = document.getElementById('iter-slider');
+        
+        const uiBisection = document.getElementById('inputs-bisection');
+        const uiNewton = document.getElementById('inputs-newton');
+        const warningBisection = document.getElementById('bracket-warning');
+        
+        const mathDisplay = document.getElementById('math-display');
+        const derivDisplay = document.getElementById('deriv-display');
+        const iterLabel = document.getElementById('iter-label');
+        const maxIterLabel = document.getElementById('max-iter-label');
+        const currentRootLabel = document.getElementById('current-root');
+        const currentErrorLabel = document.getElementById('current-error');
+        const rootsTableUI = document.getElementById('roots-table-ui');
+
+        const legBisection = document.getElementById('legend-bisection');
+        const legNewton = document.getElementById('legend-newton');
+
+        // Nodos math.js
+        let fNode, dfNode;
+        // Resultados precalculados
+        let iterationData = [];
+        
+        // Coordenadas del Canvas
+        let logicalMinX = -2, logicalMaxX = 2;
+        let logicalMinY = -2, logicalMaxY = 2;
+
+        // --- 1. PARSEO DE FUNCIONES ---
+        function parseFunction() {
+            try {
+                const expr = funcInput.value;
+                fNode = math.parse(expr);
+                dfNode = math.derivative(fNode, 'x'); // Derivada simbólica mágica
+                
+                let texF = fNode.toTex();
+                let texDF = dfNode.toTex();
+                
+                katex.render("f(x) = " + texF, mathDisplay, { throwOnError: false, displayMode: true });
+                katex.render("f'(x) = " + texDF, derivDisplay, { throwOnError: false });
+
+                calculateRoots();
+            } catch (err) {
+                mathDisplay.innerHTML = `<span class="text-red-500 font-sans">Ecuación inválida</span>`;
+                derivDisplay.innerHTML = "";
+                iterationData = [];
+            }
+        }
+
+        function f(x) {
+            try { return fNode.evaluate({x: x}); } catch(e){ return NaN; }
+        }
+        function df(x) {
+            try { return dfNode.evaluate({x: x}); } catch(e){ return NaN; }
+        }
+
+        // --- 2. LÓGICA DE MÉTODOS NUMÉRICOS ---
+        function calculateRoots() {
+            iterationData = [];
+            const method = methodSelect.value;
+            const maxIter = 15; // Limitamos a 15 para UI educativa fluida
+
+            if (method === 'bisection') {
+                uiBisection.classList.remove('hidden');
+                uiNewton.classList.add('hidden');
+                legBisection.classList.replace('hidden', 'flex');
+                legNewton.classList.replace('block', 'hidden');
+
+                let xl = parseFloat(xlInput.value);
+                let xu = parseFloat(xuInput.value);
+
+                if (isNaN(xl) || isNaN(xu) || xl >= xu) return;
+
+                if (f(xl) * f(xu) >= 0) {
+                    warningBisection.classList.remove('hidden');
+                    return;
+                } else {
+                    warningBisection.classList.add('hidden');
+                }
+
+                let xr_old = xl;
+                for (let i = 0; i <= maxIter; i++) {
+                    let xr = (xl + xu) / 2;
+                    let ea = (i === 0) ? 100.0 : Math.abs((xr - xr_old) / xr) * 100;
+                    
+                    iterationData.push({
+                        iter: i, xl: xl, xu: xu, xr: xr, ea: ea, f_xr: f(xr)
+                    });
+
+                    let test = f(xl) * f(xr);
+                    if (test < 0) xu = xr;
+                    else if (test > 0) xl = xr;
+                    else { ea = 0; break; } // Exacta
+                    
+                    xr_old = xr;
+                    if(ea < 0.001 && i > 0) break; 
+                }
+
+            } else {
+                uiNewton.classList.remove('hidden');
+                uiBisection.classList.add('hidden');
+                legNewton.classList.replace('hidden', 'block');
+                legBisection.classList.replace('flex', 'hidden');
+
+                let xi = parseFloat(x0Input.value);
+                if (isNaN(xi)) return;
+
+                // En Newton, la iteración 0 es el punto inicial (sin error)
+                iterationData.push({ iter: 0, xi: xi, f_xi: f(xi), df_xi: df(xi), ea: 100.0 });
+
+                for (let i = 1; i <= maxIter; i++) {
+                    let f_val = f(xi);
+                    let df_val = df(xi);
+                    
+                    if (Math.abs(df_val) < 1e-12) break; // Derivada cero
+
+                    let xi_next = xi - (f_val / df_val);
+                    let ea = Math.abs((xi_next - xi) / xi_next) * 100;
+                    
+                    iterationData.push({
+                        iter: i, xi: xi_next, f_xi: f(xi_next), df_xi: df(xi_next), ea: ea,
+                        tangent_p1: {x: xi, y: f_val},
+                        tangent_p2: {x: xi_next, y: 0}
+                    });
+
+                    xi = xi_next;
+                    if(ea < 0.001) break;
+                }
+            }
+
+            // Actualizar Slider UI
+            if (iterationData.length > 0) {
+                iterSlider.max = iterationData.length - 1;
+                iterSlider.value = 0; // Reset
+                maxIterLabel.innerText = iterationData.length - 1;
+                renderTable();
+                updateVisualization();
+            }
+        }
+
+        // --- 3. ACTUALIZACIÓN DE UI Y GRÁFICOS AL MOVER SLIDER ---
+        function updateVisualization() {
+            if (iterationData.length === 0) return;
+            
+            const method = methodSelect.value;
+            const currentIdx = parseInt(iterSlider.value);
+            const data = iterationData[currentIdx];
+
+            iterLabel.innerText = currentIdx;
+
+            // Actualizar Panel
+            if (method === 'bisection') {
+                currentRootLabel.innerText = data.xr.toFixed(6);
+                currentErrorLabel.innerText = (currentIdx === 0) ? "---" : data.ea.toFixed(4) + "%";
+            } else {
+                currentRootLabel.innerText = data.xi.toFixed(6);
+                currentErrorLabel.innerText = (currentIdx === 0) ? "---" : data.ea.toFixed(4) + "%";
+            }
+
+            // Resaltar en tabla
+            const rows = document.querySelectorAll('.roots-table tbody tr');
+            rows.forEach((r, i) => {
+                if (i === currentIdx) {
+                    r.classList.add('active-row');
+                    r.scrollIntoView({ block: "nearest", behavior: "smooth" });
+                } else {
+                    r.classList.remove('active-row');
+                }
+            });
+
+            calculateBounds(currentIdx);
+            drawCanvas(currentIdx);
+        }
+
+        function renderTable() {
+            const method = methodSelect.value;
+            let html = `<thead><tr>`;
+            
+            if (method === 'bisection') {
+                html += `<th>Iter</th><th>\(x_l\)</th><th>\(x_u\)</th><th>\(x_r\)</th><th>\(E_a (\%)\)</th>`;
+            } else {
+                html += `<th>Iter</th><th>\(x_i\)</th><th>\(f(x_i)\)</th><th>\(f'(x_i)\)</th><th>\(E_a (\%)\)</th>`;
+            }
+            html += `</tr></thead><tbody>`;
+
+            iterationData.forEach(d => {
+                let eaStr = (d.iter === 0 && method === 'bisection') ? "---" : 
+                            (d.iter === 0 && method === 'newton') ? "---" : d.ea.toFixed(4);
+                
+                if (method === 'bisection') {
+                    html += `<tr>
+                        <td class="font-bold text-gray-500">${d.iter}</td>
+                        <td class="mono text-gray-700">${d.xl.toFixed(5)}</td>
+                        <td class="mono text-gray-700">${d.xu.toFixed(5)}</td>
+                        <td class="mono text-amber-700 font-bold">${d.xr.toFixed(5)}</td>
+                        <td class="mono text-rose-600">${eaStr}</td>
+                    </tr>`;
+                } else {
+                    html += `<tr>
+                        <td class="font-bold text-gray-500">${d.iter}</td>
+                        <td class="mono text-amber-700 font-bold">${d.xi.toFixed(5)}</td>
+                        <td class="mono text-gray-700">${d.f_xi.toFixed(5)}</td>
+                        <td class="mono text-gray-700">${d.df_xi.toFixed(5)}</td>
+                        <td class="mono text-rose-600">${eaStr}</td>
+                    </tr>`;
+                }
+            });
+
+            html += `</tbody>`;
+            rootsTableUI.innerHTML = html;
+            renderMathInElement(rootsTableUI, { throwOnError : false });
+        }
+
+        // --- 4. RENDERIZADO DEL CANVAS ---
+        function calculateBounds(currentIdx) {
+            const method = methodSelect.value;
+            const data = iterationData[currentIdx];
+            
+            // Centrar ventana alrededor de los puntos de interés
+            let cX = 0;
+            if (method === 'bisection') cX = data.xr;
+            else cX = data.xi;
+
+            let marginX = 2; // Rango inicial
+            // Si la iteración avanza, hacemos un sutil "zoom in"
+            if (currentIdx > 2) marginX = 1;
+            if (currentIdx > 5) marginX = 0.5;
+
+            logicalMinX = cX - marginX;
+            logicalMaxX = cX + marginX;
+
+            // Calcular rango Y
+            let minY = -1, maxY = 1;
+            for(let i=0; i<=100; i++){
+                let px = logicalMinX + (logicalMaxX - logicalMinX)*(i/100);
+                let py = f(px);
+                if(isFinite(py)) {
+                    if (py < minY) minY = py;
+                    if (py > maxY) maxY = py;
+                }
+            }
+            
+            // Asegurar que el eje X esté centrado visualmente si es posible
+            if(Math.abs(minY) > maxY) maxY = Math.abs(minY);
+            if(Math.abs(maxY) > Math.abs(minY)) minY = -Math.abs(maxY);
+            
+            // Padding extra en Y
+            const yRange = (maxY - minY) || 2;
+            logicalMinY = minY - yRange * 0.1;
+            logicalMaxY = maxY + yRange * 0.1;
+        }
+
+        function mapX(x) { return (x - logicalMinX) / (logicalMaxX - logicalMinX) * canvas.width; }
+        function mapY(y) { return canvas.height - ((y - logicalMinY) / (logicalMaxY - logicalMinY) * canvas.height); }
+
+        function drawCanvas(currentIdx) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const method = methodSelect.value;
+            const data = iterationData[currentIdx];
+            
+            // 1. Ejes (X principal)
+            ctx.beginPath();
+            ctx.strokeStyle = '#cbd5e1'; // slate-300
+            ctx.lineWidth = 1.5;
+            const y0 = mapY(0);
+            if(y0 >= 0 && y0 <= canvas.height) { ctx.moveTo(0, y0); ctx.lineTo(canvas.width, y0); }
+            const x0 = mapX(0);
+            if(x0 >= 0 && x0 <= canvas.width) { ctx.moveTo(x0, 0); ctx.lineTo(x0, canvas.height); }
+            ctx.stroke();
+
+            // 2. Curva f(x)
+            ctx.beginPath();
+            ctx.strokeStyle = '#0f172a'; // slate-900
+            ctx.lineWidth = 3;
+            const steps = 300;
+            const h_curve = (logicalMaxX - logicalMinX) / steps;
+            let first = true;
+            for (let i=0; i<=steps; i++) {
+                const x = logicalMinX + i * h_curve;
+                const py = mapY(f(x));
+                if(isFinite(py)) {
+                    if (first) { ctx.moveTo(mapX(x), py); first = false; } 
+                    else { ctx.lineTo(mapX(x), py); }
+                }
+            }
+            ctx.stroke();
+
+            // 3. Visualizaciones Específicas del Método
+            if (method === 'bisection') {
+                // Límites xl y xu
+                ctx.beginPath();
+                ctx.strokeStyle = '#3b82f6'; // blue-500
+                ctx.setLineDash([5, 5]);
+                ctx.lineWidth = 2;
+                ctx.moveTo(mapX(data.xl), 0); ctx.lineTo(mapX(data.xl), canvas.height);
+                ctx.moveTo(mapX(data.xu), 0); ctx.lineTo(mapX(data.xu), canvas.height);
+                ctx.stroke();
+                ctx.setLineDash([]); // Reset
+
+                // Sombra indicando qué parte se descartó
+                ctx.fillStyle = 'rgba(59, 130, 246, 0.05)';
+                ctx.fillRect(mapX(data.xl), 0, mapX(data.xu)-mapX(data.xl), canvas.height);
+
+                // Punto Raíz actual (xr)
+                ctx.beginPath();
+                ctx.fillStyle = '#d97706'; // amber-600
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.arc(mapX(data.xr), mapY(f(data.xr)), 6, 0, Math.PI * 2);
+                ctx.fill(); ctx.stroke();
+
+                // Marca en el eje X
+                ctx.beginPath();
+                ctx.fillStyle = '#b45309';
+                ctx.arc(mapX(data.xr), mapY(0), 4, 0, Math.PI * 2);
+                ctx.fill();
+
+            } else if (method === 'newton') {
+                
+                if(currentIdx > 0 && data.tangent_p1 && data.tangent_p2) {
+                    // Dibujar Recta Tangente desde P1 (f(xi_old)) hasta P2 (eje X)
+                    ctx.beginPath();
+                    ctx.strokeStyle = '#e11d48'; // rose-600
+                    ctx.lineWidth = 2;
+                    ctx.moveTo(mapX(data.tangent_p1.x), mapY(data.tangent_p1.y));
+                    ctx.lineTo(mapX(data.tangent_p2.x), mapY(data.tangent_p2.y));
+                    // Extender un poco la línea visualmente
+                    let dx = data.tangent_p2.x - data.tangent_p1.x;
+                    let dy = data.tangent_p2.y - data.tangent_p1.y;
+                    ctx.lineTo(mapX(data.tangent_p2.x + dx*0.2), mapY(data.tangent_p2.y + dy*0.2));
+                    ctx.stroke();
+
+                    // Línea vertical punteada desde eje X subiendo a f(x_{i+1})
+                    ctx.beginPath();
+                    ctx.strokeStyle = '#94a3b8'; // slate-400
+                    ctx.setLineDash([4, 4]);
+                    ctx.moveTo(mapX(data.xi), mapY(0));
+                    ctx.lineTo(mapX(data.xi), mapY(data.f_xi));
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+
+                // Punto en f(xi)
+                ctx.beginPath();
+                ctx.fillStyle = '#d97706'; // amber-600
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.arc(mapX(data.xi), mapY(data.f_xi), 6, 0, Math.PI * 2);
+                ctx.fill(); ctx.stroke();
+
+                // Marca en el eje X
+                ctx.beginPath();
+                ctx.fillStyle = '#b45309';
+                ctx.arc(mapX(data.xi), mapY(0), 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Listeners
+        methodSelect.addEventListener('change', calculateRoots);
+        funcInput.addEventListener('input', () => { clearTimeout(window.t); window.t = setTimeout(parseFunction, 400); });
+        xlInput.addEventListener('input', calculateRoots);
+        xuInput.addEventListener('input', calculateRoots);
+        x0Input.addEventListener('input', calculateRoots);
+        iterSlider.addEventListener('input', updateVisualization);
+
+        function copyCode() {
+            const code = document.getElementById('python-code').innerText;
+            navigator.clipboard.writeText(code).then(() => {
+                alert("Código Python copiado al portapapeles.");
+            });
+        }
+
+        // Init
+        parseFunction();
+    </script>
+</body>
+</html>

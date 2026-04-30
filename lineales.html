@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistemas Lineales: Métodos Directos e Iterativos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+    
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '\\(', right: '\\)', display: false},
+                    {left: '\\[', right: '\\]', display: true}
+                ],
+                throwOnError : false
+            });
+        });
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #0f172a; }
+        code, pre { font-family: 'JetBrains Mono', monospace; }
+
+        /* Inputs de la matriz */
+        .matrix-input {
+            width: 4rem; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 0.875rem;
+            padding: 0.25rem; border: 1px solid #cbd5e1; border-radius: 0.25rem; outline: none;
+        }
+        .matrix-input:focus { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.2); }
+
+        /* Tabla Gauss-Seidel */
+        .iter-table th { position: sticky; top: 0; background-color: #eff6ff; color: #1e3a8a; }
+        .iter-table td, .iter-table th { border-bottom: 1px solid #e2e8f0; padding: 0.4rem; text-align: center; font-size: 0.8rem; }
+        .iter-table .mono { font-family: 'JetBrains Mono', monospace; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center py-10 px-4 sm:px-8">
+
+    <div class="max-w-7xl w-full bg-white shadow-xl rounded-2xl overflow-hidden">
+        
+        <header class="bg-blue-900 text-white p-8">
+            <h1 class="text-3xl font-bold mb-2">Métodos Numéricos: Ecuaciones Lineales Simultáneas</h1>
+            <h2 class="text-xl text-blue-200">Métodos Directos (Gauss, LU) e Iterativos (Gauss-Seidel)</h2>
+            <p class="mt-4 text-sm text-blue-300">Programa Analítico IC - UAZ | Análisis Matricial</p>
+        </header>
+
+        <main class="p-8 space-y-10">
+            
+            <section>
+                <h3 class="text-2xl font-semibold text-blue-800 border-b-2 border-blue-100 pb-2 mb-4">1. Fundamento Teórico</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-gray-700">
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-blue-700 mb-2">Eliminación Gaussiana</h4>
+                        <p class="text-xs">Transforma el sistema \(Ax=b\) en una matriz triangular superior mediante operaciones por renglón. Luego aplica sustitución hacia atrás.</p>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-blue-700 mb-2">Gauss-Jordan</h4>
+                        <p class="text-xs">Extensión del método de Gauss. Elimina incógnitas tanto por encima como por debajo de la diagonal, obteniendo la matriz identidad.</p>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-blue-700 mb-2">Factorización LU</h4>
+                        <p class="text-xs">Descompone \(A\) en una matriz triangular inferior \(L\) y una superior \(U\) (\(A=LU\)). Es ideal cuando se resuelven múltiples vectores \(b\).</p>
+                    </div>
+                    <div class="bg-blue-50 p-4 rounded-lg border border-blue-200 shadow-sm">
+                        <h4 class="font-bold text-blue-800 mb-2">Gauss-Seidel</h4>
+                        <p class="text-xs">Método iterativo. Despeja \(x_i\) de cada ecuación y actualiza los valores tan pronto como se calculan. Requiere que la matriz sea <strong>diagonalmente dominante</strong> para converger.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <h3 class="text-2xl font-semibold text-blue-800 mb-6">2. Laboratorio de Resolución de Sistemas (3x3)</h3>
+                
+                <div class="flex flex-col lg:flex-row gap-8">
+                    
+                    <div class="w-full lg:w-1/3 flex flex-col space-y-6">
+                        
+                        <div class="bg-slate-50 p-5 rounded-lg border border-slate-200">
+                            <h4 class="text-sm font-bold text-gray-700 mb-3 text-center">Sistema \(Ax = b\)</h4>
+                            <div class="flex items-center justify-center gap-2 mb-2">
+                                <input type="number" id="a00" value="3" step="any" class="matrix-input"> \(x_1 +\)
+                                <input type="number" id="a01" value="-0.1" step="any" class="matrix-input"> \(x_2 +\)
+                                <input type="number" id="a02" value="-0.2" step="any" class="matrix-input"> \(x_3 =\)
+                                <input type="number" id="b0" value="7.85" step="any" class="matrix-input bg-blue-50 font-bold border-blue-200">
+                            </div>
+                            <div class="flex items-center justify-center gap-2 mb-2">
+                                <input type="number" id="a10" value="0.1" step="any" class="matrix-input"> \(x_1 +\)
+                                <input type="number" id="a11" value="7" step="any" class="matrix-input"> \(x_2 +\)
+                                <input type="number" id="a12" value="-0.3" step="any" class="matrix-input"> \(x_3 =\)
+                                <input type="number" id="b1" value="-19.3" step="any" class="matrix-input bg-blue-50 font-bold border-blue-200">
+                            </div>
+                            <div class="flex items-center justify-center gap-2">
+                                <input type="number" id="a20" value="0.3" step="any" class="matrix-input"> \(x_1 +\)
+                                <input type="number" id="a21" value="-0.2" step="any" class="matrix-input"> \(x_2 +\)
+                                <input type="number" id="a22" value="10" step="any" class="matrix-input"> \(x_3 =\)
+                                <input type="number" id="b2" value="71.4" step="any" class="matrix-input bg-blue-50 font-bold border-blue-200">
+                            </div>
+                            <p class="text-[10px] text-gray-400 mt-4 text-center">Datos por defecto: Sistema clásico de Chapra & Canale.</p>
+                        </div>
+
+                        <div class="bg-white p-4 rounded-lg border border-blue-200 shadow-sm">
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Seleccionar Método de Solución:</label>
+                            <select id="method-select" class="w-full p-2 border border-blue-300 rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-blue-50 text-blue-900 font-semibold cursor-pointer">
+                                <option value="gauss" selected>Eliminación Gaussiana Simple</option>
+                                <option value="jordan">Método de Gauss-Jordan</option>
+                                <option value="lu">Factorización LU (Doolittle)</option>
+                                <option value="seidel">Gauss-Seidel (Iterativo)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="bg-blue-900 text-white p-4 rounded-lg shadow-md">
+                            <h4 class="text-xs uppercase tracking-wide text-blue-300 font-bold mb-2">Vector Solución (x)</h4>
+                            <div class="grid grid-cols-3 gap-2 text-center font-mono text-lg">
+                                <div class="bg-blue-800 rounded p-2">x₁ = <br><span id="res-x1" class="text-green-300 font-bold">0.000</span></div>
+                                <div class="bg-blue-800 rounded p-2">x₂ = <br><span id="res-x2" class="text-green-300 font-bold">0.000</span></div>
+                                <div class="bg-blue-800 rounded p-2">x₃ = <br><span id="res-x3" class="text-green-300 font-bold">0.000</span></div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="w-full lg:w-2/3 bg-slate-50 p-6 rounded-lg border border-slate-200 overflow-x-auto min-h-[400px] flex flex-col justify-center relative">
+                        <div id="latex-container" class="w-full text-center">
+                            </div>
+
+                        <div id="iterative-container" class="hidden w-full h-full flex-col">
+                            <div class="flex justify-between items-center mb-2">
+                                <h4 class="font-bold text-blue-800 text-sm">Historial de Convergencia (Gauss-Seidel)</h4>
+                                <span id="seidel-warning" class="text-xs text-rose-600 font-bold hidden">¡La matriz no es diagonalmente dominante!</span>
+                            </div>
+                            <div class="overflow-y-auto max-h-[350px] border border-gray-200 rounded">
+                                <table class="iter-table w-full" id="seidel-table">
+                                    </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h3 class="text-2xl font-semibold text-blue-800 border-b-2 border-blue-100 pb-2 mb-4">3. Implementación en Python (NumPy)</h3>
+                <p class="text-gray-700 mb-4 text-sm">
+                    En la práctica profesional, el álgebra lineal se resuelve utilizando la librería <code>numpy.linalg</code>. Sin embargo, con fines didácticos, aquí se presentan las implementaciones algorítmicas puras de los métodos tal como se enseñan en el curso.
+                </p>
+                <div class="bg-[#1e1e1e] rounded-lg overflow-hidden shadow-lg">
+                    <div class="bg-[#2d2d2d] px-4 py-2 text-xs text-gray-400 font-mono flex justify-between items-center">
+                        <span>sistemas_ecuaciones.py</span>
+                        <button onclick="copyCode()" class="hover:text-white transition-colors bg-blue-600 px-3 py-1 rounded text-white font-semibold">Copiar Código</button>
+                    </div>
+<pre class="text-sm p-6 overflow-x-auto text-gray-300"><code id="python-code"><span class="text-blue-400">import</span> numpy <span class="text-blue-400">as</span> np
+
+<span class="text-blue-400">def</span> <span class="text-yellow-200">eliminacion_gauss</span>(A, b):
+    <span class="text-green-400">"""Resuelve Ax = b usando eliminación Gaussiana simple."""</span>
+    n = <span class="text-cyan-300">len</span>(b)
+    <span class="text-gray-400"># Crear matriz aumentada [A|b] (copias para no modificar originales)</span>
+    Ab = np.concatenate((A.astype(<span class="text-cyan-300">float</span>), b.astype(<span class="text-cyan-300">float</span>).reshape(n, 1)), axis=1)
+    
+    <span class="text-gray-400"># Eliminación hacia adelante</span>
+    <span class="text-blue-400">for</span> k <span class="text-blue-400">in</span> <span class="text-cyan-300">range</span>(n - 1):
+        <span class="text-blue-400">for</span> i <span class="text-blue-400">in</span> <span class="text-cyan-300">range</span>(k + 1, n):
+            factor = Ab[i, k] / Ab[k, k]
+            Ab[i, k:] = Ab[i, k:] - factor * Ab[k, k:]
+            
+    <span class="text-gray-400"># Sustitución hacia atrás</span>
+    x = np.zeros(n)
+    x[n - 1] = Ab[n - 1, n] / Ab[n - 1, n - 1]
+    <span class="text-blue-400">for</span> i <span class="text-blue-400">in</span> <span class="text-cyan-300">range</span>(n - 2, -1, -1):
+        suma = np.dot(Ab[i, i+1:n], x[i+1:n])
+        x[i] = (Ab[i, n] - suma) / Ab[i, i]
+        
+    <span class="text-blue-400">return</span> x
+
+<span class="text-blue-400">def</span> <span class="text-yellow-200">gauss_seidel</span>(A, b, tol=<span class="text-orange-300">1e-5</span>, max_iter=<span class="text-orange-300">100</span>):
+    <span class="text-green-400">"""Resuelve Ax = b usando el método iterativo de Gauss-Seidel."""</span>
+    n = <span class="text-cyan-300">len</span>(b)
+    x = np.zeros(n)
+    x_old = np.zeros(n)
+    
+    <span class="text-blue-400">for</span> k <span class="text-blue-400">in</span> <span class="text-cyan-300">range</span>(max_iter):
+        <span class="text-blue-400">for</span> i <span class="text-blue-400">in</span> <span class="text-cyan-300">range</span>(n):
+            suma1 = np.dot(A[i, :i], x[:i])       <span class="text-gray-400"># Valores ya actualizados (k+1)</span>
+            suma2 = np.dot(A[i, i+1:], x_old[i+1:]) <span class="text-gray-400"># Valores viejos (k)</span>
+            x[i] = (b[i] - suma1 - suma2) / A[i, i]
+            
+        <span class="text-gray-400"># Cálculo del error</span>
+        ea = np.max(np.<span class="text-cyan-300">abs</span>((x - x_old) / x)) * <span class="text-orange-300">100</span>
+        <span class="text-blue-400">if</span> ea < tol:
+            <span class="text-cyan-300">print</span>(<span class="text-orange-300">f"Convergió en </span>{k+1}<span class="text-orange-300"> iteraciones."</span>)
+            <span class="text-blue-400">return</span> x
+            
+        x_old = np.copy(x)
+        
+    <span class="text-cyan-300">print</span>(<span class="text-orange-300">"Alcanzó el máximo de iteraciones sin converger."</span>)
+    <span class="text-blue-400">return</span> x
+
+<span class="text-gray-400"># --- Ejemplo de Ejecución ---</span>
+<span class="text-blue-400">if</span> __name__ == <span class="text-orange-300">"__main__"</span>:
+    A = np.array([[<span class="text-orange-300">3.0</span>, <span class="text-orange-300">-0.1</span>, <span class="text-orange-300">-0.2</span>],
+                  [<span class="text-orange-300">0.1</span>,  <span class="text-orange-300">7.0</span>, <span class="text-orange-300">-0.3</span>],
+                  [<span class="text-orange-300">0.3</span>, <span class="text-orange-300">-0.2</span>, <span class="text-orange-300">10.0</span>]])
+    b = np.array([<span class="text-orange-300">7.85</span>, <span class="text-orange-300">-19.3</span>, <span class="text-orange-300">71.4</span>])
+    
+    x_exact = eliminacion_gauss(A, b)
+    <span class="text-cyan-300">print</span>(<span class="text-orange-300">f"Solución Exacta (Gauss): </span>{x_exact}<span class="text-orange-300">"</span>)
+    
+    x_iter = gauss_seidel(A, b)
+    <span class="text-cyan-300">print</span>(<span class="text-orange-300">f"Solución Iterativa (Gauss-Seidel): </span>{x_iter}<span class="text-orange-300">"</span>)
+</code></pre>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // CORE LOGIC
+        const inputsA = [
+            [document.getElementById('a00'), document.getElementById('a01'), document.getElementById('a02')],
+            [document.getElementById('a10'), document.getElementById('a11'), document.getElementById('a12')],
+            [document.getElementById('a20'), document.getElementById('a21'), document.getElementById('a22')]
+        ];
+        const inputsB = [
+            document.getElementById('b0'), document.getElementById('b1'), document.getElementById('b2')
+        ];
+        
+        const methodSelect = document.getElementById('method-select');
+        const latexContainer = document.getElementById('latex-container');
+        const iterContainer = document.getElementById('iterative-container');
+        const iterTable = document.getElementById('seidel-table');
+        const seidelWarning = document.getElementById('seidel-warning');
+
+        const resX1 = document.getElementById('res-x1');
+        const resX2 = document.getElementById('res-x2');
+        const resX3 = document.getElementById('res-x3');
+
+        function getMatrix() {
+            let A = [[0,0,0],[0,0,0],[0,0,0]];
+            let b = [0,0,0];
+            for(let i=0; i<3; i++) {
+                for(let j=0; j<3; j++) A[i][j] = parseFloat(inputsA[i][j].value) || 0;
+                b[i] = parseFloat(inputsB[i].value) || 0;
+            }
+            return {A, b};
+        }
+
+        // Formato para mostrar números bonitos en LaTeX
+        function fmt(n) { return Math.abs(n) < 1e-10 ? "0" : n.toFixed(3).replace(/\.?0+$/, ''); }
+
+        function renderLatexMatrix(M, b_vec) {
+            let tex = "\\begin{bmatrix}\n";
+            for(let i=0; i<3; i++){
+                tex += `${fmt(M[i][0])} & ${fmt(M[i][1])} & ${fmt(M[i][2])} & \\big| & ${fmt(b_vec[i])}`;
+                if (i<2) tex += " \\\\\n";
+            }
+            tex += "\n\\end{bmatrix}";
+            return tex;
+        }
+        
+        function renderLatexPureMatrix(M) {
+            let tex = "\\begin{bmatrix}\n";
+            for(let i=0; i<3; i++){
+                tex += `${fmt(M[i][0])} & ${fmt(M[i][1])} & ${fmt(M[i][2])}`;
+                if (i<2) tex += " \\\\\n";
+            }
+            tex += "\n\\end{bmatrix}";
+            return tex;
+        }
+
+        function solve() {
+            let {A, b} = getMatrix();
+            const method = methodSelect.value;
+            let latexHTML = "";
+
+            if (method === 'seidel') {
+                latexContainer.classList.add('hidden');
+                iterContainer.classList.remove('hidden');
+                iterContainer.classList.add('flex');
+                solveSeidel(A, b);
+                return;
+            } else {
+                iterContainer.classList.add('hidden');
+                iterContainer.classList.remove('flex');
+                latexContainer.classList.remove('hidden');
+            }
+
+            // Copia de matrices para manipular
+            let M = [[...A[0]], [...A[1]], [...A[2]]];
+            let B = [...b];
+
+            if (method === 'gauss' || method === 'jordan') {
+                latexHTML += `<p class="text-sm font-bold text-gray-500 mb-2">Matriz Aumentada Inicial:</p>`;
+                latexHTML += `$$${renderLatexMatrix(M, B)}$$ <br>`;
+
+                // Eliminación hacia adelante (Gauss)
+                for (let k = 0; k < 2; k++) {
+                    for (let i = k + 1; i < 3; i++) {
+                        let factor = M[i][k] / M[k][k];
+                        for (let j = k; j < 3; j++) M[i][j] -= factor * M[k][j];
+                        B[i] -= factor * B[k];
+                    }
+                }
+                
+                latexHTML += `<p class="text-sm font-bold text-blue-600 mb-2 mt-4">Matriz Triangular Superior (Eliminación Gaussiana):</p>`;
+                latexHTML += `$$${renderLatexMatrix(M, B)}$$ <br>`;
+
+                // Sustitución hacia atrás
+                let x = [0,0,0];
+                x[2] = B[2] / M[2][2];
+                x[1] = (B[1] - M[1][2]*x[2]) / M[1][1];
+                x[0] = (B[0] - M[0][1]*x[1] - M[0][2]*x[2]) / M[0][0];
+
+                if (method === 'jordan') {
+                    // Eliminación hacia arriba (Jordan)
+                    for(let k=2; k>=0; k--) {
+                        for(let i=k-1; i>=0; i--) {
+                            let factor = M[i][k] / M[k][k];
+                            M[i][k] -= factor * M[k][k];
+                            B[i] -= factor * B[k];
+                        }
+                    }
+                    // Normalizar diagonal
+                    for(let i=0; i<3; i++) {
+                        B[i] /= M[i][i];
+                        M[i][i] = 1.0;
+                    }
+                    latexHTML += `<p class="text-sm font-bold text-blue-600 mb-2 mt-4">Matriz Identidad (Gauss-Jordan):</p>`;
+                    latexHTML += `$$${renderLatexMatrix(M, B)}$$ <br>`;
+                }
+
+                updateResults(x);
+                latexContainer.innerHTML = latexHTML;
+
+            } else if (method === 'lu') {
+                // Factorización LU (Doolittle)
+                let L = [[1,0,0],[0,1,0],[0,0,1]];
+                let U = [[0,0,0],[0,0,0],[0,0,0]];
+
+                for(let i=0; i<3; i++) {
+                    for(let k=i; k<3; k++) {
+                        let sum = 0;
+                        for(let j=0; j<i; j++) sum += (L[i][j] * U[j][k]);
+                        U[i][k] = A[i][k] - sum;
+                    }
+                    for(let k=i+1; k<3; k++) {
+                        let sum = 0;
+                        for(let j=0; j<i; j++) sum += (L[k][j] * U[j][i]);
+                        L[k][i] = (A[k][i] - sum) / U[i][i];
+                    }
+                }
+
+                latexHTML += `<p class="text-sm font-bold text-gray-500 mb-2">Descomposición A = LU:</p>`;
+                latexHTML += `$$A = L \\cdot U = ${renderLatexPureMatrix(L)} \\cdot ${renderLatexPureMatrix(U)}$$ <br>`;
+                
+                // Resolver Ly = b
+                let y = [0,0,0];
+                y[0] = b[0];
+                y[1] = b[1] - L[1][0]*y[0];
+                y[2] = b[2] - L[2][0]*y[0] - L[2][1]*y[1];
+
+                // Resolver Ux = y
+                let x = [0,0,0];
+                x[2] = y[2] / U[2][2];
+                x[1] = (y[1] - U[1][2]*x[2]) / U[1][1];
+                x[0] = (y[0] - U[0][1]*x[1] - U[0][2]*x[2]) / U[0][0];
+
+                latexHTML += `<p class="text-xs font-mono text-gray-500 mt-2">Paso 1: Ly = b  &xrarr;  y = [${fmt(y[0])}, ${fmt(y[1])}, ${fmt(y[2])}]^T</p>`;
+                latexHTML += `<p class="text-xs font-mono text-gray-500">Paso 2: Ux = y  &xrarr;  x = [${fmt(x[0])}, ${fmt(x[1])}, ${fmt(x[2])}]^T</p>`;
+
+                updateResults(x);
+                latexContainer.innerHTML = latexHTML;
+            }
+            
+            // Render Math
+            renderMathInElement(latexContainer, { throwOnError : false });
+        }
+
+        function solveSeidel(A, b) {
+            // Verificar dominancia diagonal
+            let dom = true;
+            for(let i=0; i<3; i++){
+                let sum = 0;
+                for(let j=0; j<3; j++) if(i!==j) sum += Math.abs(A[i][j]);
+                if(Math.abs(A[i][i]) <= sum) dom = false;
+            }
+            if(!dom) seidelWarning.classList.remove('hidden');
+            else seidelWarning.classList.add('hidden');
+
+            let x = [0,0,0];
+            let html = `<thead><tr><th>Iter (k)</th><th>\\(x_1\\)</th><th>\\(x_2\\)</th><th>\\(x_3\\)</th><th>\\(E_a\\) (%)</th></tr></thead><tbody>`;
+            
+            html += `<tr><td>0</td><td class="mono">0.0000</td><td class="mono">0.0000</td><td class="mono">0.0000</td><td>---</td></tr>`;
+
+            for(let k=1; k<=20; k++) {
+                let x_old = [...x];
+                
+                x[0] = (b[0] - A[0][1]*x[1] - A[0][2]*x[2]) / A[0][0];
+                x[1] = (b[1] - A[1][0]*x[0] - A[1][2]*x[2]) / A[1][1];
+                x[2] = (b[2] - A[2][0]*x[0] - A[2][1]*x[1]) / A[2][2];
+
+                let ea = 0;
+                for(let i=0; i<3; i++){
+                    let e = Math.abs((x[i] - x_old[i])/x[i])*100;
+                    if(e > ea) ea = e;
+                }
+
+                html += `<tr class="hover:bg-blue-50">
+                    <td class="font-bold text-gray-500">${k}</td>
+                    <td class="mono text-blue-700">${x[0].toFixed(5)}</td>
+                    <td class="mono text-blue-700">${x[1].toFixed(5)}</td>
+                    <td class="mono text-blue-700">${x[2].toFixed(5)}</td>
+                    <td class="mono text-rose-600">${ea.toFixed(5)}%</td>
+                </tr>`;
+
+                if(ea < 0.001) break;
+            }
+            html += `</tbody>`;
+            iterTable.innerHTML = html;
+            renderMathInElement(iterTable, { throwOnError : false });
+            updateResults(x);
+        }
+
+        function updateResults(x) {
+            resX1.innerText = isNaN(x[0]) ? "Error" : x[0].toFixed(4);
+            resX2.innerText = isNaN(x[1]) ? "Error" : x[1].toFixed(4);
+            resX3.innerText = isNaN(x[2]) ? "Error" : x[2].toFixed(4);
+        }
+
+        // Listeners
+        methodSelect.addEventListener('change', solve);
+        inputsA.flat().forEach(input => input.addEventListener('input', solve));
+        inputsB.forEach(input => input.addEventListener('input', solve));
+
+        function copyCode() {
+            const code = document.getElementById('python-code').innerText;
+            navigator.clipboard.writeText(code).then(() => {
+                alert("Código Python copiado al portapapeles.");
+            });
+        }
+
+        // Init
+        solve();
+    </script>
+</body>
+</html>

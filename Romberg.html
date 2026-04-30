@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integración Numérica: Método de Romberg</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Integración de KaTeX para tipografía matemática -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+    
+    <!-- Librería math.js para funciones dinámicas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.js"></script>
+    
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '\\(', right: '\\)', display: false},
+                    {left: '\\[', right: '\\]', display: true}
+                ],
+                throwOnError : false
+            });
+        });
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+        
+        code, pre { font-family: 'JetBrains Mono', monospace; }
+
+        canvas {
+            border: 1px solid #e2e8f0;
+            background-color: #ffffff;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Estilos para el slider (Tema Esmeralda) */
+        input[type=range]::-webkit-slider-thumb {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #059669; /* emerald-600 */
+            cursor: pointer;
+        }
+
+        /* Tabla de Romberg */
+        .romberg-table td, .romberg-table th {
+            border: 1px solid #e5e7eb;
+            padding: 0.5rem;
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+        }
+        .romberg-table th {
+            background-color: #ecfdf5; /* emerald-50 */
+            color: #065f46; /* emerald-800 */
+        }
+        .active-cell {
+            background-color: #d1fae5; /* emerald-100 */
+            font-weight: bold;
+            color: #047857; /* emerald-700 */
+            transition: background-color 0.3s;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center py-10 px-4 sm:px-8">
+
+    <div class="max-w-6xl w-full bg-white shadow-xl rounded-2xl overflow-hidden">
+        
+        <!-- Header -->
+        <header class="bg-emerald-900 text-white p-8">
+            <h1 class="text-3xl font-bold mb-2">Métodos Numéricos: Integración</h1>
+            <h2 class="text-xl text-emerald-200">Integración de Romberg</h2>
+            <p class="mt-4 text-sm text-emerald-300">Suite de Laboratorios Interactivos | Extrapolación de Richardson</p>
+        </header>
+
+        <!-- Contenido Principal -->
+        <main class="p-8 space-y-10">
+            
+            <!-- Sección de Teoría -->
+            <section>
+                <h3 class="text-2xl font-semibold text-emerald-700 border-b-2 border-emerald-100 pb-2 mb-4">1. Fundamento Teórico</h3>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 text-gray-700">
+                    <div>
+                        <p class="mb-4 text-sm">
+                            La integración de Romberg es una técnica que <strong>evalúa el integrando en puntos equiespaciados</strong> 
+                            y aplica la <strong>extrapolación de Richardson</strong> repetidamente sobre los resultados de la regla del trapecio 
+                            para obtener estimaciones con errores de truncamiento muy pequeños.
+                        </p>
+                        <p class="mb-4 text-sm">
+                            La primera columna \(R_{k,0}\) se calcula usando la regla del <strong>Trapecio de segmentos múltiples</strong>, 
+                            donde el número de segmentos se duplica en cada iteración (\(n = 2^k\)).
+                        </p>
+                    </div>
+                    <div>
+                        <div class="bg-slate-50 p-4 rounded-lg text-center overflow-x-auto text-sm border border-slate-200">
+                            <p class="text-xs text-gray-500 font-bold mb-2 uppercase text-left">Fórmula de Extrapolación:</p>
+                            $$ R_{k, j} = R_{k, j-1} + \frac{R_{k, j-1} - R_{k-1, j-1}}{4^j - 1} $$
+                            <p class="text-xs text-left mt-2 text-gray-600">
+                                Donde:<br>
+                                • \(k\) es el nivel (filas), \(j\) es el nivel de extrapolación (columnas).<br>
+                                • \(j=1\) mejora la precisión a \(O(h^4)\) (equivalente a Simpson 1/3).<br>
+                                • \(j=2\) mejora la precisión a \(O(h^6)\) (Regla de Boole), y así sucesivamente.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sección Interactiva -->
+            <section class="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                <h3 class="text-2xl font-semibold text-emerald-700 mb-6">2. Laboratorio Virtual: Tabla de Romberg</h3>
+                
+                <div class="flex flex-col xl:flex-row gap-6">
+                    <!-- Panel Izquierdo: Controles y Gráfico -->
+                    <div class="w-full xl:w-2/5 flex flex-col space-y-4">
+                        
+                        <!-- Panel de Ecuación -->
+                        <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                            <label for="func-input" class="block text-sm font-bold text-gray-700 mb-1">Función f(x):</label>
+                            <input type="text" id="func-input" value="0.2 + 25*x - 200*x^2 + 675*x^3 - 900*x^4 + 400*x^5" class="w-full p-2 border border-gray-300 rounded mb-3 font-mono text-sm focus:ring-2 focus:ring-emerald-500 outline-none" title="Polinomio clásico para probar Romberg">
+                            
+                            <div class="flex gap-4 mb-2">
+                                <div class="w-1/2">
+                                    <label class="block text-xs font-bold text-gray-700 mb-1">Límite a:</label>
+                                    <input type="number" id="limit-a" value="0" step="any" class="w-full p-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+                                </div>
+                                <div class="w-1/2">
+                                    <label class="block text-xs font-bold text-gray-700 mb-1">Límite b:</label>
+                                    <input type="number" id="limit-b" value="0.8" step="any" class="w-full p-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+                                </div>
+                            </div>
+                            <div class="text-center mt-3 h-12 flex items-center justify-center overflow-x-auto">
+                                <span id="math-display" class="text-sm text-emerald-700"></span>
+                            </div>
+                        </div>
+                        
+                        <!-- Panel de Iteraciones -->
+                        <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                            <label class="block text-sm font-bold text-gray-700 mb-2">
+                                Nivel de Refinamiento (k) = <span id="k-value" class="text-emerald-600 text-lg">3</span>
+                            </label>
+                            <input type="range" id="iterations" min="1" max="6" step="1" value="3" class="w-full h-2 bg-emerald-100 rounded-lg appearance-none cursor-pointer mb-2">
+                            <p class="text-xs text-gray-500 italic">
+                                Trapecios en el nivel más profundo: <strong id="n-segments" class="text-emerald-700">4</strong> segmentos.
+                            </p>
+                        </div>
+
+                        <!-- Canvas Mini -->
+                        <div class="bg-white p-2 rounded-xl border border-gray-200">
+                            <canvas id="graphCanvas" width="400" height="250" class="w-full h-auto bg-white rounded-lg"></canvas>
+                            <p class="text-center text-[10px] text-gray-500 mt-2">Trapecios del nivel más profundo (k)</p>
+                        </div>
+                    </div>
+
+                    <!-- Panel Derecho: Tabla de Romberg -->
+                    <div class="w-full xl:w-3/5 bg-white p-5 rounded-lg border border-gray-200 shadow-sm flex flex-col">
+                        <h4 class="font-bold text-gray-700 mb-4 text-center">Matriz de Romberg \( R_{k, j} \)</h4>
+                        
+                        <div class="overflow-x-auto w-full flex-grow">
+                            <table class="romberg-table w-full" id="romberg-ui-table">
+                                <!-- Generada por JS -->
+                            </table>
+                        </div>
+
+                        <div class="mt-6 grid grid-cols-2 gap-4">
+                            <div class="bg-gray-100 p-3 rounded border border-gray-200">
+                                <p class="text-[10px] text-gray-500 uppercase font-bold">Valor Analítico (Alta Precisión)</p>
+                                <p class="text-lg font-mono text-gray-800" id="true-area">0.00000</p>
+                            </div>
+                            <div class="bg-emerald-50 p-3 rounded border border-emerald-200 shadow-inner">
+                                <p class="text-[10px] text-emerald-600 uppercase font-bold">Mejor Estimación (Romberg)</p>
+                                <p class="text-lg font-mono text-emerald-800" id="est-area">0.00000</p>
+                            </div>
+                            <div class="bg-rose-50 p-3 rounded border border-rose-200 col-span-2 text-center">
+                                <p class="text-[10px] text-rose-600 uppercase font-bold">Error Relativo de la Mejor Estimación</p>
+                                <p class="text-xl font-mono text-rose-800" id="error-val">0.00%</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sección de Código Python -->
+            <section>
+                <h3 class="text-2xl font-semibold text-emerald-700 border-b-2 border-emerald-100 pb-2 mb-4">3. Implementación en Python</h3>
+                <p class="text-gray-700 mb-4 text-sm">
+                    La implementación genera una matriz triangular inferior. Observa cómo la primera columna (índice 0) invoca la regla del trapecio, y los bucles anidados resuelven las extrapolaciones aprovechando los cálculos previos.
+                </p>
+                <div class="bg-[#1e1e1e] rounded-lg overflow-hidden shadow-lg">
+                    <div class="bg-[#2d2d2d] px-4 py-2 text-xs text-gray-400 font-mono flex justify-between items-center">
+                        <span>romberg.py</span>
+                        <button onclick="copyCode()" class="hover:text-white transition-colors bg-emerald-600 px-3 py-1 rounded text-white font-semibold">Copiar Código</button>
+                    </div>
+<pre class="text-sm p-6 overflow-x-auto text-gray-300"><code id="python-code"><span class="text-blue-400">import</span> numpy <span class="text-blue-400">as</span> np
+
+<span class="text-blue-400">def</span> <span class="text-yellow-200">regla_trapecio_multiple</span>(f, a, b, n):
+    <span class="text-green-400">"""Calcula el trapecio múltiple para n segmentos."""</span>
+    h = (b - a) / n
+    x = np.linspace(a, b, n + 1)
+    y = f(x)
+    <span class="text-blue-400">return</span> (h / 2) * (y[0] + 2 * np.sum(y[1:-1]) + y[-1])
+
+<span class="text-blue-400">def</span> <span class="text-yellow-200">integracion_romberg</span>(f, a, b, niveles):
+    <span class="text-green-400">"""
+    Aproxima la integral usando el método de Romberg.
+    
+    Parámetros:
+    f       : función a integrar
+    a, b    : límites de integración
+    niveles : número de refinamientos (filas de la tabla)
+    
+    Retorna:
+    R       : Matriz de Romberg (triangular inferior)
+    """</span>
+    <span class="text-gray-400"># Inicializar la matriz R con ceros</span>
+    R = np.zeros((niveles, niveles))
+    
+    <span class="text-gray-400"># Nivel 0 (Trapecio simple)</span>
+    R[0, 0] = regla_trapecio_multiple(f, a, b, 1)
+    
+    <span class="text-blue-400">for</span> k <span class="text-blue-400">in</span> <span class="text-cyan-300">range</span>(1, niveles):
+        <span class="text-gray-400"># 1. Trapecio con 2^k segmentos (Columna 0)</span>
+        n = 2**k
+        R[k, 0] = regla_trapecio_multiple(f, a, b, n)
+        
+        <span class="text-gray-400"># 2. Extrapolación de Richardson (Columnas posteriores)</span>
+        <span class="text-blue-400">for</span> j <span class="text-blue-400">in</span> <span class="text-cyan-300">range</span>(1, k + 1):
+            R[k, j] = R[k, j-1] + (R[k, j-1] - R[k-1, j-1]) / ((4**j) - 1)
+            
+    <span class="text-blue-400">return</span> R
+
+<span class="text-gray-400"># --- Ejemplo de uso ---</span>
+<span class="text-blue-400">if</span> __name__ == <span class="text-orange-300">"__main__"</span>:
+    <span class="text-yellow-200">f</span> = <span class="text-blue-400">lambda</span> x: 0.2 + 25*x - 200*x**2 + 675*x**3 - 900*x**4 + 400*x**5
+    a, b = 0.0, 0.8
+    niveles_k = 4
+    
+    tabla_R = integracion_romberg(f, a, b, niveles_k)
+    
+    <span class="text-cyan-300">print</span>(<span class="text-orange-300">"Tabla de Romberg resultante:"</span>)
+    <span class="text-blue-400">for</span> fila <span class="text-blue-400">in</span> tabla_R:
+        valores_validos = [val <span class="text-blue-400">for</span> val <span class="text-blue-400">in</span> fila <span class="text-blue-400">if</span> val != 0]
+        formateados = [<span class="text-orange-300">f"</span>{v<span class="text-blue-400">:10.6f</span>}<span class="text-orange-300">"</span> <span class="text-blue-400">for</span> v <span class="text-blue-400">in</span> valores_validos]
+        <span class="text-cyan-300">print</span>(<span class="text-orange-300">" | "</span>.join(formateados))
+        
+    <span class="text-cyan-300">print</span>(<span class="text-orange-300">f"\nMejor estimación: </span>{tabla_R[-1, -1]<span class="text-blue-400">:.6f</span>}<span class="text-orange-300">"</span>)
+</code></pre>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // CORE: Funcionalidad Matemática
+        const canvas = document.getElementById('graphCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Elementos de UI
+        const funcInput = document.getElementById('func-input');
+        const limitAInput = document.getElementById('limit-a');
+        const limitBInput = document.getElementById('limit-b');
+        const slider = document.getElementById('iterations');
+        
+        // Etiquetas
+        const mathDisplay = document.getElementById('math-display');
+        const kValueLabel = document.getElementById('k-value');
+        const nSegmentsLabel = document.getElementById('n-segments');
+        const trueAreaLabel = document.getElementById('true-area');
+        const estAreaLabel = document.getElementById('est-area');
+        const errorLabel = document.getElementById('error-val');
+        const rombergTableUI = document.getElementById('romberg-ui-table');
+
+        let compiledFunc;
+        let a = 0.0, b = 0.8;
+        let trueArea = 0;
+        let rombergMatrix = [];
+
+        // Coordenadas lógicas para gráfico
+        let logicalMinX = 0, logicalMaxX = 1;
+        let logicalMinY = 0, logicalMaxY = 1;
+
+        // 1. EVALUACIÓN MATEMÁTICA
+        function parseFunction() {
+            try {
+                const expr = funcInput.value;
+                compiledFunc = math.compile(expr);
+                
+                let tex = math.parse(expr).toTex();
+                katex.render("f(x) = " + tex, mathDisplay, { throwOnError: false, displayMode: true });
+
+                a = parseFloat(limitAInput.value);
+                b = parseFloat(limitBInput.value);
+                
+                if (isNaN(a) || isNaN(b) || a >= b) throw new Error("Límites inválidos");
+
+                // Cálculo analítico de alta fidelidad (Simpson con 100k segmentos para minimizar error en polinomios grandes)
+                trueArea = calculateHighPrecisionIntegral();
+                trueAreaLabel.innerText = trueArea.toFixed(6);
+
+                calculateBounds();
+                updateRomberg();
+            } catch (err) {
+                mathDisplay.innerHTML = `<span class="text-red-500 text-sm font-sans">Ecuación o límites no válidos</span>`;
+            }
+        }
+
+        function f(x) {
+            try { return compiledFunc.evaluate({x: x}); } 
+            catch (e) { return 0; }
+        }
+
+        function calculateHighPrecisionIntegral() {
+            let n = 100000;
+            const h = (b - a) / n;
+            let sum = f(a) + f(b);
+            for (let i = 1; i < n; i++) sum += f(a + i * h) * (i % 2 === 0 ? 2 : 4);
+            return (h / 3) * sum;
+        }
+
+        // 2. LÓGICA DEL MÉTODO DE ROMBERG
+        function trapezoidalRule(n) {
+            const h = (b - a) / n;
+            let sum = f(a) + f(b);
+            for (let i = 1; i < n; i++) sum += 2 * f(a + i * h);
+            return (h / 2) * sum;
+        }
+
+        function updateRomberg() {
+            const levels = parseInt(slider.value);
+            kValueLabel.innerText = levels;
+            
+            // Trapecios en el nivel más alto: 2^(levels-1)
+            const n_max = Math.pow(2, levels - 1);
+            nSegmentsLabel.innerText = n_max;
+
+            // Calcular Matriz de Romberg
+            rombergMatrix = new Array(levels).fill(0).map(() => new Array(levels).fill(null));
+            
+            for (let k = 0; k < levels; k++) {
+                // Columna 0: Trapecios con 2^k segmentos
+                const n = Math.pow(2, k);
+                rombergMatrix[k][0] = trapezoidalRule(n);
+
+                // Columnas de extrapolación
+                for (let j = 1; j <= k; j++) {
+                    const r_k_j1 = rombergMatrix[k][j-1];
+                    const r_k1_j1 = rombergMatrix[k-1][j-1];
+                    rombergMatrix[k][j] = r_k_j1 + (r_k_j1 - r_k1_j1) / (Math.pow(4, j) - 1);
+                }
+            }
+
+            // Actualizar Tabla UI
+            renderRombergTable(levels);
+
+            // Actualizar Valores Finales
+            const bestEstimate = rombergMatrix[levels - 1][levels - 1];
+            estAreaLabel.innerText = bestEstimate.toFixed(6);
+
+            if (Math.abs(trueArea) > 1e-12) {
+                const error = Math.abs((trueArea - bestEstimate) / trueArea) * 100;
+                // Formatear error muy pequeño
+                if (error < 0.000001 && error > 0) {
+                    errorLabel.innerText = error.toExponential(2) + "%";
+                } else {
+                    errorLabel.innerText = error.toFixed(6) + "%";
+                }
+            } else {
+                errorLabel.innerText = "N/A";
+            }
+
+            drawCanvasGraph(n_max);
+        }
+
+        function renderRombergTable(levels) {
+            let html = '<thead><tr><th>Nivel</th>';
+            for (let j = 0; j < levels; j++) {
+                if (j === 0) html += `<th>\(O(h^2)\)<br><span class="text-[10px] font-normal">Trapecio</span></th>`;
+                else if (j === 1) html += `<th>\(O(h^4)\)<br><span class="text-[10px] font-normal">Simpson</span></th>`;
+                else html += `<th>\(O(h^{${(j+1)*2}})\)<br><span class="text-[10px] font-normal">Extrapl.</span></th>`;
+            }
+            html += '</tr></thead><tbody>';
+
+            for (let k = 0; k < levels; k++) {
+                html += `<tr><th class="bg-gray-50 text-gray-600">k=${k+1} (n=${Math.pow(2,k)})</th>`;
+                for (let j = 0; j < levels; j++) {
+                    if (j <= k) {
+                        const val = rombergMatrix[k][j].toFixed(6);
+                        // Resaltar la mejor estimación
+                        const isBest = (k === levels - 1 && j === levels - 1);
+                        html += `<td class="${isBest ? 'active-cell' : ''}">${val}</td>`;
+                    } else {
+                        html += `<td class="bg-gray-50 text-gray-300">-</td>`;
+                    }
+                }
+                html += '</tr>';
+            }
+            html += '</tbody>';
+            
+            rombergTableUI.innerHTML = html;
+            // Renderizar el LaTeX dinámico en los encabezados de la tabla
+            renderMathInElement(rombergTableUI, { throwOnError : false });
+        }
+
+        // 3. CANVAS GRÁFICO (Ilustrativo de la regla del trapecio de fondo)
+        function calculateBounds() {
+            let minY = Infinity, maxY = -Infinity;
+            const steps = 100;
+            const h = (b - a) / steps;
+            
+            for(let i=0; i<=steps; i++) {
+                const y = f(a + i * h);
+                if(isFinite(y)) {
+                    if (y < minY) minY = y;
+                    if (y > maxY) maxY = y;
+                }
+            }
+            
+            if (minY > 0 && minY < (maxY - minY)) minY = 0;
+            const yRange = (maxY - minY) || 10;
+            logicalMinY = minY - yRange * 0.15;
+            logicalMaxY = maxY + yRange * 0.15;
+            const xRange = b - a;
+            logicalMinX = a - xRange * 0.1;
+            logicalMaxX = b + xRange * 0.1;
+        }
+
+        function mapX(x) { return (x - logicalMinX) / (logicalMaxX - logicalMinX) * canvas.width; }
+        function mapY(y) { return canvas.height - ((y - logicalMinY) / (logicalMaxY - logicalMinY) * canvas.height); }
+
+        function drawCanvasGraph(n) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Ejes
+            ctx.beginPath();
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 1;
+            const y0 = mapY(0);
+            if(y0 >= 0 && y0 <= canvas.height) { ctx.moveTo(0, y0); ctx.lineTo(canvas.width, y0); }
+            const x0 = mapX(0);
+            if(x0 >= 0 && x0 <= canvas.width) { ctx.moveTo(x0, 0); ctx.lineTo(x0, canvas.height); }
+            ctx.stroke();
+
+            // Trapecios
+            const h = (b - a) / n;
+            ctx.lineWidth = 1;
+            for (let i = 0; i < n; i++) {
+                const x0 = a + i * h, x1 = a + (i + 1) * h;
+                const y0_val = f(x0), y1_val = f(x1);
+
+                ctx.beginPath();
+                ctx.fillStyle = 'rgba(16, 185, 129, 0.15)'; // emerald con alfa
+                ctx.strokeStyle = 'rgba(16, 185, 129, 0.5)';
+                ctx.moveTo(mapX(x0), mapY(0));
+                ctx.lineTo(mapX(x0), mapY(y0_val));
+                ctx.lineTo(mapX(x1), mapY(y1_val));
+                ctx.lineTo(mapX(x1), mapY(0));
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            }
+
+            // Curva Real
+            ctx.beginPath();
+            ctx.strokeStyle = '#0f172a'; // slate-900
+            ctx.lineWidth = 2;
+            const steps = 150;
+            const h_curve = (logicalMaxX - logicalMinX) / steps;
+            let first = true;
+            for (let i=0; i<=steps; i++) {
+                const x = logicalMinX + i * h_curve;
+                const py = mapY(f(x));
+                if(isFinite(py)) {
+                    if (first) { ctx.moveTo(mapX(x), py); first = false; } 
+                    else { ctx.lineTo(mapX(x), py); }
+                }
+            }
+            ctx.stroke();
+        }
+
+        // Listeners
+        slider.addEventListener('input', updateRomberg);
+        funcInput.addEventListener('input', parseFunction);
+        limitAInput.addEventListener('input', parseFunction);
+        limitBInput.addEventListener('input', parseFunction);
+
+        function copyCode() {
+            const code = document.getElementById('python-code').innerText;
+            navigator.clipboard.writeText(code).then(() => {
+                alert("Código Python copiado al portapapeles.");
+            });
+        }
+
+        // Init
+        parseFunction();
+    </script>
+</body>
+</html>

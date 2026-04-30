@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integración Numérica: Regla del Trapecio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Integración de KaTeX para tipografía matemática perfecta -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+    
+    <!-- Librería math.js para parsear y evaluar funciones dinámicamente -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.js"></script>
+    
+    <script>
+        // Esperamos a que todo el HTML se dibuje antes de convertir las matemáticas
+        document.addEventListener("DOMContentLoaded", function() {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '\\(', right: '\\)', display: false},
+                    {left: '\\[', right: '\\]', display: true}
+                ],
+                throwOnError : false
+            });
+        });
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+        
+        code, pre {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .math-text {
+            font-family: 'Times New Roman', Times, serif;
+            font-style: italic;
+        }
+        
+        canvas {
+            border: 1px solid #e2e8f0;
+            background-color: #ffffff;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center py-10 px-4 sm:px-8">
+
+    <div class="max-w-5xl w-full bg-white shadow-xl rounded-2xl overflow-hidden">
+        
+        <!-- Header -->
+        <header class="bg-slate-900 text-white p-8">
+            <h1 class="text-3xl font-bold mb-2">Métodos Numéricos: Integración</h1>
+            <h2 class="text-xl text-slate-300">Regla del Trapecio Simple y de Segmentos Múltiples</h2>
+            <p class="mt-4 text-sm text-slate-400">Material de apoyo para Ingeniería en Computación | Implementación en Python</p>
+        </header>
+
+        <!-- Contenido Principal -->
+        <main class="p-8 space-y-12">
+            
+            <!-- Sección de Teoría -->
+            <section>
+                <h3 class="text-2xl font-semibold text-blue-700 border-b-2 border-blue-100 pb-2 mb-4">1. Fundamento Teórico</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-gray-700">
+                    <div>
+                        <h4 class="font-bold mb-2">Regla del Trapecio Simple</h4>
+                        <p class="mb-4">
+                            La regla del trapecio es la primera de las fórmulas cerradas de integración de Newton-Cotes. 
+                            Corresponde al caso donde el polinomio interpolador es de primer grado (una línea recta).
+                        </p>
+                        <div class="bg-slate-100 p-4 rounded-lg text-center text-lg overflow-x-auto">
+                            $$ I \approx (b - a) \frac{f(a) + f(b)}{2} $$
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="font-bold mb-2">Regla de Segmentos Múltiples</h4>
+                        <p class="mb-4">
+                            Para reducir el error de truncamiento, dividimos el intervalo de integración \([a, b]\) en 
+                            \(n\) segmentos de igual ancho \(h = \frac{b - a}{n}\). 
+                            Aplicamos la regla simple a cada segmento y sumamos.
+                        </p>
+                        <div class="bg-slate-100 p-4 rounded-lg text-center overflow-x-auto">
+                            $$ I \approx \frac{h}{2} \left[ f(x_0) + 2\sum_{i=1}^{n-1} f(x_i) + f(x_n) \right] $$
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sección Interactiva -->
+            <section class="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                <h3 class="text-2xl font-semibold text-blue-700 mb-6">2. Visualización Interactiva</h3>
+                
+                <div class="flex flex-col lg:flex-row gap-8">
+                    <!-- Controles y Resultados -->
+                    <div class="w-full lg:w-1/3 flex flex-col justify-between">
+                        <div>
+                            <div class="mb-4 bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                                <label for="func-input" class="block text-sm font-bold text-gray-700 mb-1">Función f(x):</label>
+                                <input type="text" id="func-input" value="-0.2*x^2 + 2*x + 3" class="w-full p-2 border border-gray-300 rounded mb-2 font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" title="Usa sintaxis matemática (ej. x^2, sin(x), exp(x))">
+                                
+                                <div class="flex gap-4 mb-2">
+                                    <div class="w-1/2">
+                                        <label for="limit-a" class="block text-xs font-bold text-gray-700 mb-1">Límite inferior a:</label>
+                                        <input type="number" id="limit-a" value="1" step="any" class="w-full p-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                    </div>
+                                    <div class="w-1/2">
+                                        <label for="limit-b" class="block text-xs font-bold text-gray-700 mb-1">Límite superior b:</label>
+                                        <input type="number" id="limit-b" value="9" step="any" class="w-full p-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                    </div>
+                                </div>
+                                <div class="text-center mt-4 h-12 flex items-center justify-center overflow-x-auto">
+                                    <span id="math-display" class="text-lg text-indigo-700"></span>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-6">
+                                <label for="segments" class="block text-sm font-bold text-gray-700 mb-2">
+                                    Número de segmentos (<span id="n-value" class="text-blue-600">1</span>):
+                                </label>
+                                <input type="range" id="segments" min="1" max="50" value="1" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                                <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                    <span>Simple (n=1)</span>
+                                    <span>Múltiple (n=50)</span>
+                                </div>
+                            </div>
+
+                            <div class="space-y-4">
+                                <div class="bg-white p-4 rounded shadow-sm border border-gray-100">
+                                    <p class="text-xs text-gray-500 uppercase tracking-wide">Área Verdadera (Analítica)</p>
+                                    <p class="text-xl font-bold text-gray-800" id="true-area">0.0000</p>
+                                </div>
+                                <div class="bg-blue-50 p-4 rounded shadow-sm border border-blue-100">
+                                    <p class="text-xs text-blue-600 uppercase tracking-wide">Área Estimada (Trapecios)</p>
+                                    <p class="text-xl font-bold text-blue-800" id="est-area">0.0000</p>
+                                </div>
+                                <div class="bg-red-50 p-4 rounded shadow-sm border border-red-100">
+                                    <p class="text-xs text-red-600 uppercase tracking-wide">Error Relativo Porcentual</p>
+                                    <p class="text-xl font-bold text-red-800" id="error-val">0.00%</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Canvas -->
+                    <div class="w-full lg:w-2/3">
+                        <canvas id="graphCanvas" width="600" height="400" class="w-full h-auto"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sección de Código Python -->
+            <section>
+                <h3 class="text-2xl font-semibold text-blue-700 border-b-2 border-blue-100 pb-2 mb-4">3. Implementación en Python</h3>
+                <p class="text-gray-700 mb-4">
+                    Para la implementación computacional, aprovecharemos el poder del cálculo vectorizado utilizando la biblioteca <code>numpy</code>. 
+                    Esto evita bucles <code>for</code> innecesarios, haciendo el código más limpio y eficiente, una práctica esencial en la ingeniería de software científico.
+                </p>
+                <div class="bg-[#1e1e1e] rounded-lg overflow-hidden shadow-lg">
+                    <div class="bg-[#2d2d2d] px-4 py-2 text-xs text-gray-400 font-mono flex justify-between items-center">
+                        <span>trapecio.py</span>
+                        <button onclick="copyCode()" class="hover:text-white transition-colors">Copiar Código</button>
+                    </div>
+<pre class="text-sm p-6 overflow-x-auto text-gray-300"><code id="python-code"><span class="text-blue-400">import</span> numpy <span class="text-blue-400">as</span> np
+
+<span class="text-blue-400">def</span> <span class="text-yellow-200">f</span>(x):
+    <span class="text-green-400">"""
+    Función objetivo a integrar. 
+    Modifica el retorno con la ecuación deseada.
+    """</span>
+    <span class="text-blue-400">return</span> -0.2 * x**2 + 2 * x + 3
+
+<span class="text-blue-400">def</span> <span class="text-yellow-200">regla_trapecio_multiple</span>(funcion, a, b, n):
+    <span class="text-green-400">"""
+    Aproxima la integral definida de una función usando la regla del trapecio compuesta.
+    
+    Parámetros:
+    funcion : objeto de función de Python
+    a       : Límite inferior de integración (float)
+    b       : Límite superior de integración (float)
+    n       : Número de segmentos o subintervalos (int)
+    
+    Retorna:
+    float   : Valor aproximado de la integral
+    """</span>
+    <span class="text-gray-400"># 1. Calculamos el ancho de cada segmento (h)</span>
+    h = (b - a) / n
+    
+    <span class="text-gray-400"># 2. Generamos un arreglo con los puntos x evaluados (desde x_0 hasta x_n)</span>
+    x = np.linspace(a, b, n + 1)
+    
+    <span class="text-gray-400"># 3. Evaluamos la función en todos los puntos x al mismo tiempo (vectorización)</span>
+    y = funcion(x)
+    
+    <span class="text-gray-400"># 4. Aplicamos la fórmula matemática: 
+    #    I = (h/2) * [f(x_0) + 2*sumatoria(f(x_i)) + f(x_n)]</span>
+    
+    suma_extremos = y[0] + y[-1]
+    suma_interior = np.sum(y[1:-1])  <span class="text-gray-400"># Ignora el primero y el último</span>
+    
+    integral = (h / 2) * (suma_extremos + 2 * suma_interior)
+    
+    <span class="text-blue-400">return</span> integral
+
+<span class="text-gray-400"># --- Bloque principal (Ejecución) ---</span>
+<span class="text-blue-400">if</span> __name__ == <span class="text-orange-300">"__main__"</span>:
+    limite_inf = 1.0
+    limite_sup = 9.0
+    segmentos = 4
+    
+    resultado = regla_trapecio_multiple(f, limite_inf, limite_sup, segmentos)
+    
+    <span class="text-cyan-300">print</span>(<span class="text-orange-300">f"--- Análisis Numérico ---"</span>)
+    <span class="text-cyan-300">print</span>(<span class="text-orange-300">f"Límites de integración : [</span>{limite_inf}<span class="text-orange-300">, </span>{limite_sup}<span class="text-orange-300">]"</span>)
+    <span class="text-cyan-300">print</span>(<span class="text-orange-300">f"Número de segmentos    : </span>{segmentos}<span class="text-orange-300">"</span>)
+    <span class="text-cyan-300">print</span>(<span class="text-orange-300">f"Valor Aproximado (I)   : </span>{resultado<span class="text-blue-400">:.5f</span>}<span class="text-orange-300">"</span>)
+</code></pre>
+                </div>
+            </section>
+        </main>
+
+        <footer class="bg-gray-100 p-6 text-center text-sm text-gray-500 border-t border-gray-200">
+            Material educativo generado para Ingeniería en Computación | Métodos Numéricos
+        </footer>
+    </div>
+
+    <script>
+        // Lógica Matemática y de Visualización
+        const canvas = document.getElementById('graphCanvas');
+        const ctx = canvas.getContext('2d');
+        const slider = document.getElementById('segments');
+        const nValueLabel = document.getElementById('n-value');
+        const trueAreaLabel = document.getElementById('true-area');
+        const estAreaLabel = document.getElementById('est-area');
+        const errorLabel = document.getElementById('error-val');
+
+        const funcInput = document.getElementById('func-input');
+        const limitAInput = document.getElementById('limit-a');
+        const limitBInput = document.getElementById('limit-b');
+        const mathDisplay = document.getElementById('math-display');
+
+        let compiledFunc;
+        let a = 1.0;
+        let b = 9.0;
+        let trueArea = 0;
+
+        // Configuración de renderizado
+        let logicalMinX = 0;
+        let logicalMaxX = 10;
+        let logicalMinY = 0;
+        let logicalMaxY = 9;
+
+        // Compilar y actualizar función
+        function parseFunction() {
+            try {
+                const expr = funcInput.value;
+                compiledFunc = math.compile(expr);
+                
+                // Renderizar a LaTeX (manejando algunos reemplazos para mejorar visualización)
+                let tex = math.parse(expr).toTex();
+                katex.render("f(x) = " + tex, mathDisplay, {
+                    throwOnError: false,
+                    displayMode: true
+                });
+
+                // Actualizar límites
+                a = parseFloat(limitAInput.value);
+                b = parseFloat(limitBInput.value);
+                
+                if (isNaN(a) || isNaN(b) || a >= b) {
+                    throw new Error("Límites inválidos");
+                }
+
+                // Calcular área "verdadera" con el método de Simpson 1/3 con 10,000 segmentos
+                // Usamos esto como "Ground Truth" en ausencia de integración simbólica
+                trueArea = calculateSimpson(10000);
+                trueAreaLabel.innerText = trueArea.toFixed(4);
+
+                calculateBounds();
+                update();
+            } catch (err) {
+                mathDisplay.innerHTML = `<span class="text-red-500 text-sm font-sans">Expresión matemática o límites inválidos</span>`;
+            }
+        }
+
+        // Evaluar la función compilada
+        function f(x) {
+            try {
+                return compiledFunc.evaluate({x: x});
+            } catch (e) {
+                return 0;
+            }
+        }
+
+        // Integración numérica de alta precisión para el "Área Verdadera"
+        function calculateSimpson(n) {
+            if (n % 2 !== 0) n++; 
+            const h = (b - a) / n;
+            let sum = f(a) + f(b);
+            for (let i = 1; i < n; i++) {
+                sum += f(a + i * h) * (i % 2 === 0 ? 2 : 4);
+            }
+            return (h / 3) * sum;
+        }
+
+        // Autoescalado de los ejes del Canvas
+        function calculateBounds() {
+            let minY = Infinity;
+            let maxY = -Infinity;
+            const steps = 200;
+            const h = (b - a) / steps;
+            
+            for(let i=0; i<=steps; i++) {
+                const y = f(a + i * h);
+                if(isFinite(y)) {
+                    if (y < minY) minY = y;
+                    if (y > maxY) maxY = y;
+                }
+            }
+            
+            // Asegurarnos de que Y=0 esté en el gráfico si tiene sentido
+            if (minY > 0 && minY < (maxY - minY)) minY = 0;
+            if (maxY < 0 && Math.abs(maxY) < (maxY - minY)) maxY = 0;
+
+            const yRange = (maxY - minY) || 10;
+            logicalMinY = minY - yRange * 0.15;
+            logicalMaxY = maxY + yRange * 0.15;
+            
+            const xRange = b - a;
+            logicalMinX = a - xRange * 0.1;
+            logicalMaxX = b + xRange * 0.1;
+        }
+
+        function mapX(x) {
+            return (x - logicalMinX) / (logicalMaxX - logicalMinX) * canvas.width;
+        }
+
+        function mapY(y) {
+            return canvas.height - ((y - logicalMinY) / (logicalMaxY - logicalMinY) * canvas.height);
+        }
+
+        function drawAxes() {
+            ctx.beginPath();
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 1;
+            
+            // Eje X (y=0)
+            const y0 = mapY(0);
+            if(y0 >= 0 && y0 <= canvas.height) {
+                ctx.moveTo(0, y0);
+                ctx.lineTo(canvas.width, y0);
+            }
+            
+            // Eje Y (x=0)
+            const x0 = mapX(0);
+            if(x0 >= 0 && x0 <= canvas.width) {
+                ctx.moveTo(x0, 0);
+                ctx.lineTo(x0, canvas.height);
+            }
+            ctx.stroke();
+
+            // Marcas en X dinámicas
+            ctx.fillStyle = '#64748b';
+            ctx.font = '12px Inter';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            
+            const range = b - a;
+            const step = range / 8;
+            for(let i=0; i<=8; i++) {
+                const tickX = a + i * step;
+                const canvasX = mapX(tickX);
+                
+                let textY = y0 + 5;
+                // Si el eje X está fuera de la pantalla, dibujar marcas en los bordes
+                if(y0 > canvas.height) textY = canvas.height - 20;
+                else if (y0 < 0) textY = 5;
+
+                ctx.fillText(tickX.toFixed(1), canvasX, textY);
+                
+                ctx.beginPath();
+                ctx.moveTo(canvasX, y0);
+                ctx.lineTo(canvasX, y0 - 5);
+                ctx.stroke();
+            }
+        }
+
+        function drawCurve() {
+            ctx.beginPath();
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 3;
+            
+            const steps = 300;
+            const h = (logicalMaxX - logicalMinX) / steps;
+            
+            let first = true;
+            for (let i=0; i<=steps; i++) {
+                const x = logicalMinX + i * h;
+                const px = mapX(x);
+                const py = mapY(f(x));
+                
+                if(isFinite(py)) {
+                    if (first) {
+                        ctx.moveTo(px, py);
+                        first = false;
+                    } else {
+                        ctx.lineTo(px, py);
+                    }
+                }
+            }
+            ctx.stroke();
+        }
+
+        function drawTrapezoids(n) {
+            const h = (b - a) / n;
+            let estimatedArea = 0;
+
+            ctx.lineWidth = 1.5;
+            
+            for (let i = 0; i < n; i++) {
+                const x0 = a + i * h;
+                const x1 = a + (i + 1) * h;
+                const y0 = f(x0);
+                const y1 = f(x1);
+
+                estimatedArea += (h / 2) * (y0 + y1);
+
+                ctx.beginPath();
+                ctx.fillStyle = 'rgba(59, 130, 246, 0.2)'; 
+                ctx.strokeStyle = '#2563eb'; 
+                
+                ctx.moveTo(mapX(x0), mapY(0)); // Base 1
+                ctx.lineTo(mapX(x0), mapY(y0)); // Altura 1
+                ctx.lineTo(mapX(x1), mapY(y1)); // Techo
+                ctx.lineTo(mapX(x1), mapY(0)); // Base 2
+                ctx.closePath();
+                
+                ctx.fill();
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.fillStyle = '#dc2626'; 
+                ctx.arc(mapX(x0), mapY(y0), 4, 0, Math.PI * 2);
+                ctx.arc(mapX(x1), mapY(y1), 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            return estimatedArea;
+        }
+
+        function update() {
+            const n = parseInt(slider.value);
+            nValueLabel.innerText = n;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            drawAxes();
+            const estArea = drawTrapezoids(n);
+            drawCurve(); 
+            
+            estAreaLabel.innerText = estArea.toFixed(4);
+            
+            // Evitar división por cero al calcular el error
+            let error = 0;
+            if (Math.abs(trueArea) > 1e-10) {
+                error = Math.abs((trueArea - estArea) / trueArea) * 100;
+                errorLabel.innerText = error.toFixed(4) + "%";
+            } else {
+                errorLabel.innerText = "N/A (Div/0)";
+            }
+        }
+
+        // Listeners de eventos
+        slider.addEventListener('input', update);
+        funcInput.addEventListener('input', parseFunction);
+        limitAInput.addEventListener('input', parseFunction);
+        limitBInput.addEventListener('input', parseFunction);
+
+        function copyCode() {
+            const code = document.getElementById('python-code').innerText;
+            navigator.clipboard.writeText(code).then(() => {
+                alert("Código Python copiado al portapapeles.");
+            });
+        }
+
+        // Inicialización
+        parseFunction();
+    </script>
+</body>
+</html>
