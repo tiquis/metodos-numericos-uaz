@@ -289,10 +289,10 @@
             let tableHTML = `
                 <thead>
                     <tr>
-                        <th>Paso (\(i\))</th>
-                        <th>\(x_i\)</th>
-                        <th>\(y_{i, \\text{num}}\)</th>
-                        <th>\(y_{i, \\text{exact}}\) (Ref)</th>
+                        <th>Paso (<i>i</i>)</th>
+                        <th><i>x<sub>i</sub></i></th>
+                        <th><i>y<sub>i, num</sub></i></th>
+                        <th><i>y<sub>i, exact</sub></i> (Ref)</th>
                         <th>Error Rel. (%)</th>
                     </tr>
                 </thead>
@@ -339,7 +339,6 @@
 
             tableHTML += `</tbody>`;
             edoTableUI.innerHTML = tableHTML;
-            renderMathInElement(edoTableUI, { throwOnError : false });
 
             if (Math.abs(exactFinalY) > 1e-12) {
                 const globalError = Math.abs((exactFinalY - curr_y) / exactFinalY) * 100;
