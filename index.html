@@ -3,66 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Métodos Numéricos - UAZ</title>
+    <title>Laboratorio Virtual: Métodos Numéricos</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; color: #0f172a; }
-        
-        .module-card {
-            transition: all 0.3s ease;
-        }
-        .module-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-        }
-        
-        /* Tema Institucional (Colores aproximados UAZ Azul/Oro) */
-        .bg-uaz-blue { background-color: #0b2240; }
-        .text-uaz-gold { color: #d4af37; }
-        .border-uaz-gold { border-color: #d4af37; }
-        .bg-uaz-gold { background-color: #d4af37; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .module-card { transition: all 0.3s ease; }
+        .module-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
     </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body class="min-h-screen flex flex-col items-center py-10 px-4 sm:px-8">
 
-    <!-- Hero / Header -->
-    <header class="bg-uaz-blue text-white pt-16 pb-20 px-4 sm:px-8 relative overflow-hidden shadow-lg border-b-4 border-uaz-gold">
-        <div class="max-w-6xl mx-auto relative z-10 text-center">
-            <h3 class="text-uaz-gold font-bold tracking-widest uppercase text-sm mb-3">Universidad Autónoma de Zacatecas</h3>
-            <h1 class="text-4xl md:text-5xl font-extrabold mb-4">Métodos Numéricos</h1>
-            <h2 class="text-xl md:text-2xl text-gray-300 font-light max-w-3xl mx-auto">
-                Programa de Ingeniería en Computación <br>
-                <span class="font-semibold text-white">Suite de Laboratorios Interactivos</span>
-            </h2>
-        </div>
-        <!-- Decoración de fondo -->
-        <div class="absolute opacity-10 top-0 left-0 w-full h-full pointer-events-none flex items-center justify-center">
-            <i class="fas fa-microchip text-[20rem]"></i>
-        </div>
-    </header>
+    <div class="max-w-7xl w-full">
+        <header class="bg-slate-900 text-white p-10 rounded-2xl shadow-xl mb-12 relative overflow-hidden">
+            <div class="relative z-10">
+                <h1 class="text-4xl font-bold mb-4">Suite de Laboratorios Interactivos</h1>
+                <h2 class="text-2xl text-slate-300">Métodos Numéricos</h2>
+                <p class="mt-6 text-sm text-slate-400 font-medium max-w-2xl">
+                    Plataforma educativa para la visualización, experimentación y análisis de métodos matemáticos.
+                    Selecciona un módulo a continuación para comenzar.
+                </p>
+            </div>
+            <div class="absolute -right-10 -bottom-10 opacity-10 pointer-events-none">
+                <i class="fas fa-microchip text-[250px]"></i>
+            </div>
+        </header>
 
-    <!-- Contenido Principal / Grid de Módulos -->
-    <main class="flex-grow max-w-6xl mx-auto px-4 sm:px-8 py-12 -mt-12 relative z-20 w-full">
-        
         <div class="space-y-12">
-            
-            <!-- BLOQUE: Raíces de Ecuaciones -->
+            <!-- Raíces de Ecuaciones -->
             <section>
                 <div class="flex items-center gap-3 mb-6">
                     <div class="bg-amber-100 p-3 rounded-lg text-amber-600"><i class="fas fa-square-root-variable text-xl"></i></div>
-                    <h3 class="text-2xl font-bold text-gray-800">Unidad 2: Raíces de Ecuaciones</h3>
+                    <h3 class="text-2xl font-bold text-gray-800">Raíces de Ecuaciones</h3>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <a href="raices.html" class="module-card block bg-white rounded-xl overflow-hidden border border-gray-200 shadow-sm">
                         <div class="h-2 bg-amber-500 w-full"></div>
                         <div class="p-6">
-                            <div class="flex justify-between items-start mb-4">
-                                <h4 class="font-bold text-lg text-gray-800">Métodos Abiertos y Cerrados</h4>
-                                <span class="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-1 rounded">Lab 1</span>
-                            </div>
-                            <p class="text-sm text-gray-500 mb-4">Bisección, Falsa Posición, Newton-Raphson y Secante. Análisis visual de convergencia con máquina del tiempo iterativa.</p>
+                            <h4 class="font-bold text-lg text-gray-800 mb-2">Métodos Abiertos y Cerrados</h4>
+                            <p class="text-sm text-gray-500 mb-4">Bisección, Falsa Posición, Newton-Raphson y Secante. Análisis visual de convergencia paso a paso.</p>
                             <div class="text-amber-600 font-semibold text-sm flex items-center gap-1 group">
                                 Iniciar Laboratorio <i class="fas fa-arrow-right transition-transform group-hover:translate-x-1"></i>
                             </div>
@@ -71,21 +51,18 @@
                 </div>
             </section>
 
-            <!-- BLOQUE: Sistemas Lineales -->
+            <!-- Sistemas Lineales -->
             <section>
                 <div class="flex items-center gap-3 mb-6">
-                    <div class="bg-blue-100 p-3 rounded-lg text-blue-600"><i class="fas fa-border-all text-xl"></i></div>
-                    <h3 class="text-2xl font-bold text-gray-800">Unidad 3: Ecuaciones Lineales</h3>
+                    <div class="bg-blue-100 p-3 rounded-lg text-blue-600"><i class="fas fa-table-cells-large text-xl"></i></div>
+                    <h3 class="text-2xl font-bold text-gray-800">Ecuaciones Lineales Simultáneas</h3>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <a href="lineales.html" class="module-card block bg-white rounded-xl overflow-hidden border border-gray-200 shadow-sm">
-                        <div class="h-2 bg-blue-600 w-full"></div>
+                        <div class="h-2 bg-blue-500 w-full"></div>
                         <div class="p-6">
-                            <div class="flex justify-between items-start mb-4">
-                                <h4 class="font-bold text-lg text-gray-800">Métodos Directos e Iterativos</h4>
-                                <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded">Lab 2</span>
-                            </div>
-                            <p class="text-sm text-gray-500 mb-4">Resolución de sistemas 3x3 paso a paso usando Gauss, Gauss-Jordan, Factorización LU y Gauss-Seidel.</p>
+                            <h4 class="font-bold text-lg text-gray-800 mb-2">Métodos Directos e Iterativos</h4>
+                            <p class="text-sm text-gray-500 mb-4">Eliminación Gaussiana, Gauss-Jordan, Factorización LU y Gauss-Seidel.</p>
                             <div class="text-blue-600 font-semibold text-sm flex items-center gap-1 group">
                                 Iniciar Laboratorio <i class="fas fa-arrow-right transition-transform group-hover:translate-x-1"></i>
                             </div>
@@ -94,66 +71,69 @@
                 </div>
             </section>
 
-            <!-- BLOQUE: Integración Numérica -->
+            <!-- Integración Numérica -->
             <section>
                 <div class="flex items-center gap-3 mb-6">
                     <div class="bg-indigo-100 p-3 rounded-lg text-indigo-600"><i class="fas fa-chart-area text-xl"></i></div>
-                    <h3 class="text-2xl font-bold text-gray-800">Unidad 4: Integración Numérica</h3>
+                    <h3 class="text-2xl font-bold text-gray-800">Integración Numérica</h3>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <a href="trapecio.html" class="module-card block bg-white rounded-xl overflow-hidden border border-gray-200 shadow-sm">
-                        <div class="h-2 bg-slate-600 w-full"></div>
-                        <div class="p-5">
-                            <h4 class="font-bold text-md text-gray-800 mb-2">Regla del Trapecio</h4>
-                            <p class="text-xs text-gray-500 mb-4">Aplicación simple y de segmentos múltiples para aproximar áreas bajo la curva.</p>
-                            <span class="text-slate-600 font-semibold text-xs">Ingresar <i class="fas fa-arrow-right"></i></span>
+                        <div class="h-2 bg-slate-500 w-full"></div>
+                        <div class="p-6">
+                            <h4 class="font-bold text-lg text-gray-800 mb-2">Regla del Trapecio</h4>
+                            <p class="text-sm text-gray-500 mb-4">Aproximación de áreas usando trapecios de segmentos múltiples.</p>
+                            <div class="text-slate-600 font-semibold text-sm flex items-center gap-1 group">
+                                Abrir Módulo <i class="fas fa-arrow-right transition-transform group-hover:translate-x-1"></i>
+                            </div>
                         </div>
                     </a>
-                    
                     <a href="Simpson.html" class="module-card block bg-white rounded-xl overflow-hidden border border-gray-200 shadow-sm">
                         <div class="h-2 bg-indigo-500 w-full"></div>
-                        <div class="p-5">
-                            <h4 class="font-bold text-md text-gray-800 mb-2">Reglas de Simpson</h4>
-                            <p class="text-xs text-gray-500 mb-4">Interpolación polinómica (1/3 y 3/8) para reducción dramática del error.</p>
-                            <span class="text-indigo-600 font-semibold text-xs">Ingresar <i class="fas fa-arrow-right"></i></span>
+                        <div class="p-6">
+                            <h4 class="font-bold text-lg text-gray-800 mb-2">Reglas de Simpson</h4>
+                            <p class="text-sm text-gray-500 mb-4">Interpolación con polinomios de 2do y 3er grado (Reglas de 1/3 y 3/8).</p>
+                            <div class="text-indigo-600 font-semibold text-sm flex items-center gap-1 group">
+                                Abrir Módulo <i class="fas fa-arrow-right transition-transform group-hover:translate-x-1"></i>
+                            </div>
                         </div>
                     </a>
-
                     <a href="Romberg.html" class="module-card block bg-white rounded-xl overflow-hidden border border-gray-200 shadow-sm">
                         <div class="h-2 bg-emerald-500 w-full"></div>
-                        <div class="p-5">
-                            <h4 class="font-bold text-md text-gray-800 mb-2">Método de Romberg</h4>
-                            <p class="text-xs text-gray-500 mb-4">Uso de la Extrapolación de Richardson en una matriz triangular.</p>
-                            <span class="text-emerald-600 font-semibold text-xs">Ingresar <i class="fas fa-arrow-right"></i></span>
+                        <div class="p-6">
+                            <h4 class="font-bold text-lg text-gray-800 mb-2">Integración de Romberg</h4>
+                            <p class="text-sm text-gray-500 mb-4">Mejora sistemática de precisión usando extrapolación de Richardson.</p>
+                            <div class="text-emerald-600 font-semibold text-sm flex items-center gap-1 group">
+                                Abrir Módulo <i class="fas fa-arrow-right transition-transform group-hover:translate-x-1"></i>
+                            </div>
                         </div>
                     </a>
-
                     <a href="Cuadratura.html" class="module-card block bg-white rounded-xl overflow-hidden border border-gray-200 shadow-sm">
-                        <div class="h-2 bg-purple-600 w-full"></div>
-                        <div class="p-5">
-                            <h4 class="font-bold text-md text-gray-800 mb-2">Cuadratura Gaussiana</h4>
-                            <p class="text-xs text-gray-500 mb-4">Optimización de nodos y pesos de Legendre para alta precisión.</p>
-                            <span class="text-purple-600 font-semibold text-xs">Ingresar <i class="fas fa-arrow-right"></i></span>
+                        <div class="h-2 bg-purple-500 w-full"></div>
+                        <div class="p-6">
+                            <h4 class="font-bold text-lg text-gray-800 mb-2">Cuadratura Gaussiana</h4>
+                            <p class="text-sm text-gray-500 mb-4">Optimización de nodos de evaluación y pesos (Gauss-Legendre).</p>
+                            <div class="text-purple-600 font-semibold text-sm flex items-center gap-1 group">
+                                Abrir Módulo <i class="fas fa-arrow-right transition-transform group-hover:translate-x-1"></i>
+                            </div>
                         </div>
                     </a>
                 </div>
             </section>
 
-            <!-- BLOQUE: Ecuaciones Diferenciales -->
+            <!-- Ecuaciones Diferenciales Ordinarias (CORREGIDO) -->
             <section>
                 <div class="flex items-center gap-3 mb-6">
                     <div class="bg-teal-100 p-3 rounded-lg text-teal-600"><i class="fas fa-wave-square text-xl"></i></div>
-                    <h3 class="text-2xl font-bold text-gray-800">Unidad 5: Ecuaciones Diferenciales (EDO)</h3>
+                    <h3 class="text-2xl font-bold text-gray-800">Ecuaciones Diferenciales (EDO)</h3>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- ENLACE CORREGIDO: Ahora apunta a edo.html -->
                     <a href="edo.html" class="module-card block bg-white rounded-xl overflow-hidden border border-gray-200 shadow-sm">
-                        <div class="h-2 bg-teal-600 w-full"></div>
+                        <div class="h-2 bg-teal-500 w-full"></div>
                         <div class="p-6">
-                            <div class="flex justify-between items-start mb-4">
-                                <h4 class="font-bold text-lg text-gray-800">Problemas de Valor Inicial</h4>
-                                <span class="bg-teal-100 text-teal-800 text-xs font-bold px-2 py-1 rounded">Lab Final</span>
-                            </div>
-                            <p class="text-sm text-gray-500 mb-4">Estudio comparativo de trayectorias usando los métodos de Euler, Heun y Runge-Kutta de 4to Orden.</p>
+                            <h4 class="font-bold text-lg text-gray-800 mb-2">Problemas de Valor Inicial</h4>
+                            <p class="text-sm text-gray-500 mb-4">Resolución de EDOs usando los métodos de Euler, Heun y Runge-Kutta 4 (RK4).</p>
                             <div class="text-teal-600 font-semibold text-sm flex items-center gap-1 group">
                                 Iniciar Laboratorio <i class="fas fa-arrow-right transition-transform group-hover:translate-x-1"></i>
                             </div>
@@ -163,13 +143,6 @@
             </section>
 
         </div>
-    </main>
-
-    <!-- Footer -->
-    <footer class="bg-gray-900 text-gray-400 py-8 text-center text-sm border-t border-gray-800 mt-10">
-        <p class="mb-2">Desarrollado para el Programa Analítico de Ingeniería en Computación</p>
-        <p class="font-semibold text-gray-300">Universidad Autónoma de Zacatecas (UAZ)</p>
-    </footer>
-
+    </div>
 </body>
 </html>
