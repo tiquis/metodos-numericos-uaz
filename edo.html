@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Integración Numérica: Cuadratura Gaussiana</title>
+    <title>Ecuaciones Diferenciales: Euler, Heun y RK4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- Integración de KaTeX para tipografía matemática -->
@@ -11,7 +11,7 @@
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
     
-    <!-- Librería math.js para funciones dinámicas -->
+    <!-- Librería math.js para funciones dinámicas de 2 variables -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.js"></script>
     
     <script>
@@ -30,12 +30,7 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
         
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f8fafc;
-            color: #0f172a;
-        }
-        
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #0f172a; }
         code, pre { font-family: 'JetBrains Mono', monospace; }
 
         canvas {
@@ -45,278 +40,185 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
-        /* Estilos para el slider (Tema Púrpura) */
         input[type=range]::-webkit-slider-thumb {
             appearance: none;
             width: 16px;
             height: 16px;
             border-radius: 50%;
-            background: #7e22ce; /* purple-700 */
+            background: #0f766e; /* teal-700 */
             cursor: pointer;
         }
 
-        /* Tabla de Nodos */
-        .gauss-table td, .gauss-table th {
-            border: 1px solid #e5e7eb;
-            padding: 0.5rem;
-            text-align: center;
-            font-size: 0.875rem;
+        .edo-table th {
+            position: sticky; top: 0; background-color: #f0fdfa; color: #115e59; z-index: 10;
         }
-        .gauss-table th {
-            background-color: #faf5ff; /* purple-50 */
-            color: #581c87; /* purple-900 */
+        .edo-table td, .edo-table th {
+            border-bottom: 1px solid #e5e7eb; padding: 0.5rem; text-align: center; font-size: 0.875rem;
         }
-        .gauss-table .mono {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.8rem;
-        }
+        .edo-table .mono { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center py-10 px-4 sm:px-8">
 
-    <div class="max-w-6xl w-full bg-white shadow-xl rounded-2xl overflow-hidden">
+    <div class="max-w-7xl w-full bg-white shadow-xl rounded-2xl overflow-hidden">
         
         <!-- Header -->
-        <header class="bg-purple-900 text-white p-8">
-            <h1 class="text-3xl font-bold mb-2">Métodos Numéricos: Integración Avanzada</h1>
-            <h2 class="text-xl text-purple-200">Cuadratura Gaussiana (Fórmulas de Gauss-Legendre)</h2>
-            <p class="mt-4 text-sm text-purple-300">Suite de Laboratorios Interactivos | Optimización de Nodos de Evaluación</p>
+        <header class="bg-teal-900 text-white p-8">
+            <h1 class="text-3xl font-bold mb-2">Métodos Numéricos: Ecuaciones Diferenciales (EDO)</h1>
+            <h2 class="text-xl text-teal-200">Problemas de Valor Inicial: Euler, Heun, Polígono, Ralston y RK4</h2>
+            <p class="mt-4 text-sm text-teal-300">Programa Analítico IC - UAZ | Modelado de Sistemas Dinámicos</p>
         </header>
 
         <!-- Contenido Principal -->
         <main class="p-8 space-y-10">
             
-            <!-- Sección de Teoría -->
+            <!-- Teoría -->
             <section>
-                <h3 class="text-2xl font-semibold text-purple-700 border-b-2 border-purple-100 pb-2 mb-4">1. El Poder de los Puntos Óptimos</h3>
-                <div class="grid grid-cols-1 xl:grid-cols-2 gap-8 text-gray-700">
-                    <div>
-                        <p class="mb-4 text-sm">
-                            A diferencia de los métodos de Newton-Cotes que usan puntos separados a distancias iguales, la <strong>Cuadratura de Gauss</strong> optimiza tanto los <em>pesos</em> (\(w_i\)) como la <em>posición de los puntos</em> (\(t_i\)) para minimizar el error.
-                        </p>
-                        <p class="mb-4 text-sm">
-                            Un polinomio de grado \(2n - 1\) puede ser integrado de manera <strong>exacta</strong> utilizando tan solo \(n\) puntos. Las fórmulas estándar se definen para el intervalo \([-1, 1]\):
-                        </p>
-                        <div class="bg-slate-50 p-4 rounded-lg text-center overflow-x-auto text-sm border border-slate-200 mb-4">
-                            $$\int_{-1}^{1} g(t) dt \approx \sum_{i=1}^{n} w_i g(t_i)$$
+                <h3 class="text-2xl font-semibold text-teal-700 border-b-2 border-teal-100 pb-2 mb-4">1. Solución de Problemas de Valor Inicial (PVI)</h3>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 text-gray-700">
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                        <h4 class="font-bold text-lg text-teal-800 mb-2 border-b border-gray-100 pb-1">1. Método de Euler</h4>
+                        <p class="mb-3 text-sm text-gray-600">Calcula la pendiente al inicio del intervalo y traza una línea recta. Acumula mucho error si la curva cambia rápidamente.</p>
+                        <div class="bg-slate-50 p-2 rounded text-center overflow-x-auto text-sm border border-slate-200">
+                            $$ y_{i+1} = y_i + h f(x_i, y_i) $$
                         </div>
                     </div>
-                    <div>
-                        <p class="mb-2 text-sm font-bold text-purple-800">Transformación de Coordenadas</p>
-                        <p class="mb-4 text-sm">
-                            Para integrar en un intervalo arbitrario \([a, b]\), debemos aplicar un cambio de variable desde el dominio \(t \in [-1, 1]\) hacia \(x \in [a, b]\):
-                        </p>
-                        <div class="bg-purple-50 p-4 rounded-lg text-center overflow-x-auto text-sm border border-purple-200 shadow-inner">
-                            <p class="mb-2">$$x = \frac{b-a}{2}t + \frac{b+a}{2} \quad \text{y} \quad dx = \frac{b-a}{2}dt$$</p>
-                            <p class="mt-4 font-semibold">Fórmula Final de Integración:</p>
-                            $$\int_{a}^{b} f(x) dx \approx \frac{b-a}{2} \sum_{i=1}^{n} w_i \cdot f\left( \frac{b-a}{2}t_i + \frac{b+a}{2} \right)$$
+                    
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                        <h4 class="font-bold text-lg text-teal-800 mb-2 border-b border-gray-100 pb-1">2. Método de Heun</h4>
+                        <p class="mb-3 text-sm text-gray-600">Promedia la pendiente inicial y una pendiente "predicha" al final del intervalo, corrigiendo la trayectoria.</p>
+                        <div class="bg-slate-50 p-2 rounded text-center overflow-x-auto text-xs border border-slate-200">
+                            $$ y_{i+1} = y_i + \frac{h}{2} (k_1 + k_2) $$
+                            <span class="text-gray-500">Donde \(k_1 = f(x_i,y_i)\), \(k_2 = f(x_i+h, y_i+hk_1)\)</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                        <h4 class="font-bold text-lg text-teal-800 mb-2 border-b border-gray-100 pb-1">3. Mejorado del Polígono</h4>
+                        <p class="mb-3 text-sm text-gray-600">Mejora la estimación de Euler evaluando la pendiente en el punto medio exacto del intervalo.</p>
+                        <div class="bg-slate-50 p-2 rounded text-center overflow-x-auto text-xs border border-slate-200">
+                            $$ y_{i+1} = y_i + h f\left(x_i + \frac{h}{2}, y_i + \frac{h}{2}f(x_i, y_i)\right) $$
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                        <h4 class="font-bold text-lg text-teal-800 mb-2 border-b border-gray-100 pb-1">4. Método de Ralston</h4>
+                        <p class="mb-3 text-sm text-gray-600">Método RK de 2do orden diseñado matemáticamente para minimizar el límite del error de truncamiento local.</p>
+                        <div class="bg-slate-50 p-2 rounded text-center overflow-x-auto text-xs border border-slate-200">
+                            $$ y_{i+1} = y_i + h \left(\frac{1}{3}k_1 + \frac{2}{3}k_2\right) $$
+                            <span class="text-gray-500">Donde \(k_2 = f(x_i + \frac{3}{4}h, y_i + \frac{3}{4}hk_1)\)</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 border-l-4 border-l-teal-500">
+                        <h4 class="font-bold text-lg text-teal-800 mb-2 border-b border-gray-100 pb-1">5. Runge-Kutta 4 (RK4)</h4>
+                        <p class="mb-3 text-sm text-gray-600">El estándar de la industria. Utiliza un promedio ponderado de 4 pendientes dentro del intervalo para lograr gran exactitud.</p>
+                        <div class="bg-teal-50 p-2 rounded text-center overflow-x-auto text-xs border border-teal-200">
+                            $$ y_{i+1} = y_i + \frac{h}{6}(k_1 + 2k_2 + 2k_3 + k_4) $$
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Sección Interactiva -->
+            <!-- Laboratorio -->
             <section class="bg-slate-50 p-6 rounded-xl border border-slate-200">
-                <h3 class="text-2xl font-semibold text-purple-700 mb-6">2. Laboratorio Virtual: Evaluación Gaussiana</h3>
+                <h3 class="text-2xl font-semibold text-teal-700 mb-6">2. Laboratorio Comparativo</h3>
                 
                 <div class="flex flex-col xl:flex-row gap-6">
-                    <!-- Panel Izquierdo: Controles y Gráfico -->
-                    <div class="w-full xl:w-1/2 flex flex-col space-y-4">
+                    <div class="w-full xl:w-1/3 flex flex-col space-y-4">
                         
-                        <!-- Panel de Ecuación -->
                         <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                            <label for="func-input" class="block text-sm font-bold text-gray-700 mb-1">Función f(x):</label>
-                            <!-- Por defecto el polinomio grado 5 de Chapra, que Gauss n=3 resuelve exacto -->
-                            <input type="text" id="func-input" value="0.2 + 25*x - 200*x^2 + 675*x^3 - 900*x^4 + 400*x^5" class="w-full p-2 border border-gray-300 rounded mb-3 font-mono text-sm focus:ring-2 focus:ring-purple-500 outline-none">
-                            
-                            <div class="flex gap-4 mb-2">
-                                <div class="w-1/2">
-                                    <label class="block text-xs font-bold text-gray-700 mb-1">Límite a:</label>
-                                    <input type="number" id="limit-a" value="0" step="any" class="w-full p-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-purple-500 outline-none">
-                                </div>
-                                <div class="w-1/2">
-                                    <label class="block text-xs font-bold text-gray-700 mb-1">Límite b:</label>
-                                    <input type="number" id="limit-b" value="0.8" step="any" class="w-full p-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-purple-500 outline-none">
-                                </div>
-                            </div>
-                            <div class="text-center mt-3 h-12 flex items-center justify-center overflow-x-auto">
-                                <span id="math-display" class="text-sm text-purple-700"></span>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Ecuación Diferencial dy/dx = f(x,y):</label>
+                            <input type="text" id="func-input" value="y - x^2 + 1" class="w-full p-2 border border-gray-300 rounded mb-3 font-mono text-sm focus:ring-2 focus:ring-teal-500 outline-none">
+                            <div class="text-center h-10 flex items-center justify-center overflow-x-auto bg-slate-50 rounded">
+                                <span id="math-display" class="text-sm text-teal-700"></span>
                             </div>
                         </div>
                         
-                        <!-- Panel de Puntos (n) -->
                         <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                            <h4 class="text-sm font-bold text-gray-700 mb-3 border-b pb-1">Condiciones Iniciales y Dominio</h4>
+                            <div class="grid grid-cols-2 gap-4 mb-3">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 mb-1">x₀ (Inicio):</label>
+                                    <input type="number" id="x0-val" value="0" step="any" class="w-full p-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-teal-500 outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 mb-1">y₀ = y(x₀):</label>
+                                    <input type="number" id="y0-val" value="0.5" step="any" class="w-full p-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-teal-500 outline-none">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-600 mb-1">xf (Punto Final a evaluar):</label>
+                                <input type="number" id="xf-val" value="2" step="any" class="w-full p-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-teal-500 outline-none">
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Método Numérico:</label>
+                            <select id="method-select" class="w-full p-2 border border-gray-300 rounded mb-4 text-sm focus:ring-2 focus:ring-teal-500 outline-none bg-teal-50 text-teal-900 font-semibold">
+                                <option value="euler">Método de Euler (1er Orden)</option>
+                                <option value="heun">Método de Heun (2do Orden)</option>
+                                <option value="poligono">Mejorado del Polígono (2do Orden)</option>
+                                <option value="ralston">Método de Ralston (2do Orden)</option>
+                                <option value="rk4" selected>Runge-Kutta (4to Orden)</option>
+                            </select>
+
                             <label class="block text-sm font-bold text-gray-700 mb-2">
-                                Número de puntos de evaluación (n) = <span id="n-value" class="text-purple-600 text-xl font-black">3</span>
+                                Número de Pasos (n) = <span id="n-value" class="text-teal-600 text-lg font-black">10</span>
                             </label>
-                            <input type="range" id="n-points" min="2" max="6" step="1" value="3" class="w-full h-2 bg-purple-100 rounded-lg appearance-none cursor-pointer mb-2">
-                            <p class="text-xs text-gray-500 italic mt-2" id="degree-info">
-                                Con n=3 evalúa exactamente polinomios hasta grado 5.
-                            </p>
-                        </div>
-
-                        <!-- Canvas Analítico -->
-                        <div class="bg-white p-2 rounded-xl border border-gray-200">
-                            <canvas id="graphCanvas" width="500" height="300" class="w-full h-auto bg-white rounded-lg"></canvas>
-                            <p class="text-center text-[11px] text-gray-500 mt-2 flex justify-center gap-4">
-                                <span><span class="inline-block w-3 h-3 bg-slate-900 rounded-full align-middle"></span> \(f(x)\)</span>
-                                <span><span class="inline-block w-1 h-3 bg-purple-600 align-middle"></span> Puntos de muestreo de Gauss</span>
+                            <input type="range" id="n-steps" min="2" max="50" step="1" value="10" class="w-full h-2 bg-teal-100 rounded-lg appearance-none cursor-pointer mb-2">
+                            <p class="text-xs text-gray-500 font-mono mt-2 bg-gray-50 p-1 rounded text-center">
+                                Tamaño de paso (h) = <span id="h-value" class="font-bold text-gray-700">0.2000</span>
                             </p>
                         </div>
                     </div>
 
-                    <!-- Panel Derecho: Tabla de Nodos y Resultados -->
-                    <div class="w-full xl:w-1/2 bg-white p-5 rounded-lg border border-gray-200 shadow-sm flex flex-col">
-                        <h4 class="font-bold text-gray-700 mb-4 text-center">Evaluación de Nodos de Gauss-Legendre</h4>
-                        
-                        <div class="overflow-x-auto w-full flex-grow">
-                            <table class="gauss-table w-full" id="gauss-table-ui">
-                                <!-- Generada por JS -->
-                            </table>
+                    <div class="w-full xl:w-2/3 flex flex-col space-y-4">
+                        <div class="bg-white p-2 rounded-xl border border-gray-200 shadow-sm">
+                            <canvas id="graphCanvas" width="700" height="350" class="w-full h-auto bg-white rounded-lg"></canvas>
+                            <div class="flex justify-center gap-6 mt-3 text-xs text-gray-600">
+                                <span class="flex items-center gap-1"><span class="w-4 h-1 bg-slate-200 rounded block border border-slate-400"></span> Solución Exacta (Ref.)</span>
+                                <span class="flex items-center gap-1"><span class="w-4 h-1 bg-teal-600 rounded block"></span> Aproximación Numérica</span>
+                                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-500 block"></span> Puntos calculados (nodos)</span>
+                            </div>
                         </div>
 
-                        <div class="mt-6 space-y-3">
-                            <div class="bg-slate-100 p-3 rounded border border-slate-200 flex justify-between items-center">
-                                <span class="text-xs text-slate-600 uppercase font-bold">Valor Analítico de Referencia:</span>
-                                <span class="text-lg font-mono text-slate-800" id="true-area">0.0000000</span>
+                        <div class="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col h-64 overflow-hidden">
+                            <div class="bg-teal-900 text-teal-50 px-4 py-2 text-sm font-bold flex justify-between">
+                                <span>Tabla de Resultados paso a paso</span>
+                                <span id="final-error-display" class="text-rose-300 font-mono">Error final: 0.00%</span>
                             </div>
-                            <div class="bg-purple-100 p-4 rounded border border-purple-300 shadow-inner flex justify-between items-center">
-                                <span class="text-sm text-purple-800 uppercase font-bold">Aproximación Gaussiana (I):</span>
-                                <span class="text-2xl font-mono font-bold text-purple-900" id="est-area">0.0000000</span>
-                            </div>
-                            <div class="bg-rose-50 p-3 rounded border border-rose-200 text-center">
-                                <p class="text-[10px] text-rose-600 uppercase font-bold">Error Relativo Porcentual</p>
-                                <p class="text-xl font-mono text-rose-800" id="error-val">0.00%</p>
+                            <div class="overflow-y-auto flex-grow">
+                                <table class="edo-table w-full" id="edo-table-ui"></table>
                             </div>
                         </div>
                     </div>
-                </div>
-            </section>
-
-            <!-- Sección de Código Python -->
-            <section>
-                <h3 class="text-2xl font-semibold text-purple-700 border-b-2 border-purple-100 pb-2 mb-4">3. Implementación Vectorizada en Python</h3>
-                <p class="text-gray-700 mb-4 text-sm">
-                    En Python, podemos usar <code>numpy</code> para manejar los arreglos de pesos (<code>w</code>) y raíces (<code>t</code>). Además, mostramos cómo usar la librería estándar <code>scipy.integrate</code> para obtener las raíces de Legendre automáticamente para cualquier valor de \(n\).
-                </p>
-                <div class="bg-[#1e1e1e] rounded-lg overflow-hidden shadow-lg">
-                    <div class="bg-[#2d2d2d] px-4 py-2 text-xs text-gray-400 font-mono flex justify-between items-center">
-                        <span>cuadratura_gaussiana.py</span>
-                        <button onclick="copyCode()" class="hover:text-white transition-colors bg-purple-600 px-3 py-1 rounded text-white font-semibold">Copiar Código</button>
-                    </div>
-<pre class="text-sm p-6 overflow-x-auto text-gray-300"><code id="python-code"><span class="text-blue-400">import</span> numpy <span class="text-blue-400">as</span> np
-<span class="text-blue-400">from</span> numpy.polynomial.legendre <span class="text-blue-400">import</span> leggauss
-
-<span class="text-blue-400">def</span> <span class="text-yellow-200">cuadratura_gaussiana</span>(f, a, b, n):
-    <span class="text-green-400">"""
-    Aproxima la integral de f(x) en [a, b] usando Cuadratura de Gauss-Legendre.
-    
-    Parámetros:
-    f : función a integrar
-    a : límite inferior
-    b : límite superior
-    n : número de puntos de integración
-    """</span>
-    <span class="text-gray-400"># 1. Obtener raíces (t) y pesos (w) de los polinomios de Legendre para [-1, 1]</span>
-    t, w = leggauss(n)
-    
-    <span class="text-gray-400"># 2. Transformar las raíces (t) del dominio [-1, 1] al dominio [a, b]</span>
-    x = 0.5 * (b - a) * t + 0.5 * (b + a)
-    
-    <span class="text-gray-400"># 3. Evaluar la función en los puntos transformados</span>
-    fx = f(x)
-    
-    <span class="text-gray-400"># 4. Multiplicar por pesos, sumar, y ajustar por el diferencial dx</span>
-    integral = 0.5 * (b - a) * np.sum(w * fx)
-    
-    <span class="text-blue-400">return</span> integral, x, w
-
-<span class="text-gray-400"># --- Ejemplo de Uso ---</span>
-<span class="text-blue-400">if</span> __name__ == <span class="text-orange-300">"__main__"</span>:
-    <span class="text-gray-400"># Polinomio de grado 5 (Chapra)</span>
-    <span class="text-yellow-200">f</span> = <span class="text-blue-400">lambda</span> x: 0.2 + 25*x - 200*x**2 + 675*x**3 - 900*x**4 + 400*x**5
-    a, b = 0.0, 0.8
-    
-    <span class="text-gray-400"># Probando con 3 puntos (debería ser exacto para un polinomio de grado 5)</span>
-    n_puntos = 3
-    resultado, nodos_evaluados, pesos = cuadratura_gaussiana(f, a, b, n_puntos)
-    
-    <span class="text-cyan-300">print</span>(<span class="text-orange-300">f"Nodos de evaluación transformados: </span>{nodos_evaluados}<span class="text-orange-300">"</span>)
-    <span class="text-cyan-300">print</span>(<span class="text-orange-300">f"Pesos de Legendre: </span>{pesos}<span class="text-orange-300">"</span>)
-    <span class="text-cyan-300">print</span>(<span class="text-orange-300">f"Área Calculada (I): </span>{resultado<span class="text-blue-400">:.7f</span>}<span class="text-orange-300">"</span>)
-</code></pre>
                 </div>
             </section>
         </main>
     </div>
 
     <script>
-        // CORE: Funcionalidad Matemática
         const canvas = document.getElementById('graphCanvas');
         const ctx = canvas.getContext('2d');
         
         const funcInput = document.getElementById('func-input');
-        const limitAInput = document.getElementById('limit-a');
-        const limitBInput = document.getElementById('limit-b');
-        const sliderN = document.getElementById('n-points');
+        const x0Input = document.getElementById('x0-val');
+        const y0Input = document.getElementById('y0-val');
+        const xfInput = document.getElementById('xf-val');
+        const methodSelect = document.getElementById('method-select');
+        const nSlider = document.getElementById('n-steps');
         
         const mathDisplay = document.getElementById('math-display');
         const nValueLabel = document.getElementById('n-value');
-        const degreeInfoLabel = document.getElementById('degree-info');
-        const trueAreaLabel = document.getElementById('true-area');
-        const estAreaLabel = document.getElementById('est-area');
-        const errorLabel = document.getElementById('error-val');
-        const gaussTableUI = document.getElementById('gauss-table-ui');
+        const hValueLabel = document.getElementById('h-value');
+        const finalErrorLabel = document.getElementById('final-error-display');
+        const edoTableUI = document.getElementById('edo-table-ui');
 
         let compiledFunc;
-        let a = 0.0, b = 0.8;
-        let trueArea = 0;
-
-        // Diccionario de Nodos (t_i) y Pesos (w_i) de Gauss-Legendre pre-calculados (alta precisión)
-        const gaussData = {
-            2: {
-                t: [-Math.sqrt(1/3), Math.sqrt(1/3)],
-                w: [1.0, 1.0]
-            },
-            3: {
-                t: [-Math.sqrt(3/5), 0, Math.sqrt(3/5)],
-                w: [5/9, 8/9, 5/9]
-            },
-            4: {
-                t: [
-                    -Math.sqrt(3/7 + (2/7)*Math.sqrt(6/5)), 
-                    -Math.sqrt(3/7 - (2/7)*Math.sqrt(6/5)), 
-                     Math.sqrt(3/7 - (2/7)*Math.sqrt(6/5)), 
-                     Math.sqrt(3/7 + (2/7)*Math.sqrt(6/5))
-                ],
-                w: [
-                    (18 - Math.sqrt(30))/36, 
-                    (18 + Math.sqrt(30))/36, 
-                    (18 + Math.sqrt(30))/36, 
-                    (18 - Math.sqrt(30))/36
-                ]
-            },
-            5: {
-                t: [
-                    -(1/3)*Math.sqrt(5 + 2*Math.sqrt(10/7)),
-                    -(1/3)*Math.sqrt(5 - 2*Math.sqrt(10/7)),
-                    0,
-                    (1/3)*Math.sqrt(5 - 2*Math.sqrt(10/7)),
-                    (1/3)*Math.sqrt(5 + 2*Math.sqrt(10/7))
-                ],
-                w: [
-                    (322 - 13*Math.sqrt(70))/900,
-                    (322 + 13*Math.sqrt(70))/900,
-                    128/225,
-                    (322 + 13*Math.sqrt(70))/900,
-                    (322 - 13*Math.sqrt(70))/900
-                ]
-            },
-            6: { // Aproximaciones altas para n=6
-                t: [-0.9324695142, -0.6612093865, -0.2386191861, 0.2386191861, 0.6612093865, 0.9324695142],
-                w: [0.1713244924, 0.3607615730, 0.4679139346, 0.4679139346, 0.3607615730, 0.1713244924]
-            }
-        };
+        let x0 = 0.0, y0 = 0.5, xf = 2.0;
+        let exactPoints = [];
+        let numPoints = [];
 
         let logicalMinX = 0, logicalMaxX = 1;
         let logicalMinY = 0, logicalMaxY = 1;
@@ -327,229 +229,253 @@
                 compiledFunc = math.compile(expr);
                 
                 let tex = math.parse(expr).toTex();
-                katex.render("f(x) = " + tex, mathDisplay, { throwOnError: false, displayMode: true });
+                katex.render("\\frac{dy}{dx} = " + tex, mathDisplay, { throwOnError: false, displayMode: true });
 
-                a = parseFloat(limitAInput.value);
-                b = parseFloat(limitBInput.value);
+                x0 = parseFloat(x0Input.value);
+                y0 = parseFloat(y0Input.value);
+                xf = parseFloat(xfInput.value);
                 
-                if (isNaN(a) || isNaN(b) || a >= b) throw new Error("Límites inválidos");
-
-                trueArea = calculateHighPrecisionIntegral();
-                trueAreaLabel.innerText = trueArea.toFixed(7);
-
-                calculateBounds();
-                updateGauss();
+                if (isNaN(x0) || isNaN(y0) || isNaN(xf) || x0 >= xf) throw new Error("Condiciones inválidas");
+                calculateSystem();
             } catch (err) {
-                mathDisplay.innerHTML = `<span class="text-red-500 text-sm font-sans">Ecuación o límites no válidos</span>`;
+                mathDisplay.innerHTML = `<span class="text-red-500 text-sm font-sans">Expresión f(x,y) o valores inválidos</span>`;
             }
         }
 
-        function f(x) {
-            try { return compiledFunc.evaluate({x: x}); } 
+        function f(x, y) {
+            try { return compiledFunc.evaluate({x: x, y: y}); } 
             catch (e) { return 0; }
         }
 
-        // Simpson de muy alta precisión para el Ground Truth
-        function calculateHighPrecisionIntegral() {
-            let n = 50000;
-            const h = (b - a) / n;
-            let sum = f(a) + f(b);
-            for (let i = 1; i < n; i++) sum += f(a + i * h) * (i % 2 === 0 ? 2 : 4);
-            return (h / 3) * sum;
+        function generateExactSolution() {
+            exactPoints = [];
+            let steps = 10000;
+            let h = (xf - x0) / steps;
+            let curr_x = x0;
+            let curr_y = y0;
+            
+            exactPoints.push({x: curr_x, y: curr_y});
+            
+            for(let i=0; i<steps; i++){
+                let k1 = f(curr_x, curr_y);
+                let k2 = f(curr_x + h/2, curr_y + (h/2)*k1);
+                let k3 = f(curr_x + h/2, curr_y + (h/2)*k2);
+                let k4 = f(curr_x + h, curr_y + h*k3);
+                
+                curr_y = curr_y + (h/6)*(k1 + 2*k2 + 2*k3 + k4);
+                curr_x += h;
+                
+                if (i % 20 === 0 || i === steps - 1) {
+                    exactPoints.push({x: curr_x, y: curr_y});
+                }
+            }
+            return curr_y;
         }
 
-        function updateGauss() {
-            const n = parseInt(sliderN.value);
+        function calculateSystem() {
+            const n = parseInt(nSlider.value);
             nValueLabel.innerText = n;
-            degreeInfoLabel.innerText = `Con n=${n} la integral es exacta para polinomios de grado hasta ${(2*n)-1}.`;
+            const h = (xf - x0) / n;
+            hValueLabel.innerText = h.toFixed(4);
+            const method = methodSelect.value;
 
-            const nodes = gaussData[n];
-            let integral = 0;
+            const exactFinalY = generateExactSolution();
+
+            numPoints = [];
+            let curr_x = x0;
+            let curr_y = y0;
+            numPoints.push({x: curr_x, y: curr_y, exactY: curr_y}); 
             
-            // Factor de transformación diferencial dx
-            const diffX = (b - a) / 2;
-            const midX = (b + a) / 2;
-
             let tableHTML = `
                 <thead>
                     <tr>
-                        <th>\(i\)</th>
-                        <th>Nodo Base \(t_i\)</th>
-                        <th>Peso \(w_i\)</th>
-                        <th>Nodo Transf. \(x_i\)</th>
-                        <th>\(f(x_i)\)</th>
+                        <th>Paso (\(i\))</th>
+                        <th>\(x_i\)</th>
+                        <th>\(y_{i, \\text{num}}\)</th>
+                        <th>\(y_{i, \\text{exact}}\) (Ref)</th>
+                        <th>Error Rel. (%)</th>
                     </tr>
                 </thead>
                 <tbody>
             `;
 
-            let sampledPoints = [];
+            tableHTML += generateTableRow(0, curr_x, curr_y, curr_y);
 
             for (let i = 0; i < n; i++) {
-                const ti = nodes.t[i];
-                const wi = nodes.w[i];
-                
-                // Transformación al intervalo [a, b]
-                const xi = diffX * ti + midX;
-                const fxi = f(xi);
-                
-                integral += wi * fxi;
-                sampledPoints.push({x: xi, y: fxi});
+                let ref_y = getExactYAtX(curr_x + h);
 
-                tableHTML += `
-                    <tr>
-                        <td class="font-bold text-gray-500">${i+1}</td>
-                        <td class="mono text-gray-700">${ti.toFixed(6)}</td>
-                        <td class="mono text-purple-700 font-bold">${wi.toFixed(6)}</td>
-                        <td class="mono text-blue-700">${xi.toFixed(6)}</td>
-                        <td class="mono text-gray-800">${fxi.toFixed(6)}</td>
-                    </tr>
-                `;
-            }
-
-            integral = integral * diffX;
-            tableHTML += `</tbody>`;
-            gaussTableUI.innerHTML = tableHTML;
-            renderMathInElement(gaussTableUI, { throwOnError : false });
-
-            estAreaLabel.innerText = integral.toFixed(7);
-
-            if (Math.abs(trueArea) > 1e-12) {
-                const error = Math.abs((trueArea - integral) / trueArea) * 100;
-                if (error < 0.0000001 && error > 0) {
-                    errorLabel.innerText = error.toExponential(2) + "% (Exacto)";
-                } else {
-                    errorLabel.innerText = error.toFixed(7) + "%";
+                if (method === 'euler') {
+                    curr_y = curr_y + h * f(curr_x, curr_y);
+                } 
+                else if (method === 'heun') {
+                    let k1 = f(curr_x, curr_y);
+                    let y_pred = curr_y + h * k1;
+                    let k2 = f(curr_x + h, y_pred);
+                    curr_y = curr_y + (h/2) * (k1 + k2);
+                } 
+                else if (method === 'poligono') {
+                    let k1 = f(curr_x, curr_y);
+                    let k2 = f(curr_x + h/2, curr_y + (h/2)*k1);
+                    curr_y = curr_y + h * k2;
                 }
-            } else {
-                errorLabel.innerText = "N/A";
+                else if (method === 'ralston') {
+                    let k1 = f(curr_x, curr_y);
+                    let k2 = f(curr_x + 0.75 * h, curr_y + 0.75 * h * k1);
+                    curr_y = curr_y + h * ((1/3)*k1 + (2/3)*k2);
+                }
+                else if (method === 'rk4') {
+                    let k1 = f(curr_x, curr_y);
+                    let k2 = f(curr_x + h/2, curr_y + (h/2)*k1);
+                    let k3 = f(curr_x + h/2, curr_y + (h/2)*k2);
+                    let k4 = f(curr_x + h, curr_y + h*k3);
+                    curr_y = curr_y + (h/6) * (k1 + 2*k2 + 2*k3 + k4);
+                }
+                
+                curr_x += h;
+                
+                numPoints.push({x: curr_x, y: curr_y});
+                tableHTML += generateTableRow(i+1, curr_x, curr_y, ref_y);
             }
 
-            drawCanvasGraph(sampledPoints);
+            tableHTML += `</tbody>`;
+            edoTableUI.innerHTML = tableHTML;
+            renderMathInElement(edoTableUI, { throwOnError : false });
+
+            if (Math.abs(exactFinalY) > 1e-12) {
+                const globalError = Math.abs((exactFinalY - curr_y) / exactFinalY) * 100;
+                finalErrorLabel.innerText = `Error global en xf: ${globalError.toExponential(3)}%`;
+            }
+
+            calculateBounds();
+            drawCanvasGraph();
         }
 
-        // CANVAS
+        function getExactYAtX(targetX) {
+            let steps = 1000;
+            let local_h = (targetX - x0) / steps;
+            let local_y = y0;
+            let local_x = x0;
+            for(let i=0; i<steps; i++){
+                let k1 = f(local_x, local_y);
+                let k2 = f(local_x + local_h/2, local_y + (local_h/2)*k1);
+                let k3 = f(local_x + local_h/2, local_y + (local_h/2)*k2);
+                let k4 = f(local_x + local_h, local_y + local_h*k3);
+                local_y = local_y + (local_h/6)*(k1 + 2*k2 + 2*k3 + k4);
+                local_x += local_h;
+            }
+            return local_y;
+        }
+
+        function generateTableRow(i, x, numY, exactY) {
+            let err = 0;
+            if(Math.abs(exactY) > 1e-10) {
+                err = Math.abs((exactY - numY) / exactY) * 100;
+            }
+            let errColor = 'text-gray-600';
+            if(err > 5) errColor = 'text-rose-600 font-bold';
+            else if(err > 1) errColor = 'text-orange-600';
+
+            let errDisplay = err < 0.00001 && err > 0 ? err.toExponential(2) : err.toFixed(4);
+            if(i===0) errDisplay = "0.0000";
+
+            return `
+                <tr class="hover:bg-teal-50/50 transition-colors">
+                    <td class="font-bold text-slate-500">${i}</td>
+                    <td class="mono text-slate-700">${x.toFixed(4)}</td>
+                    <td class="mono text-teal-700 font-bold bg-teal-50/30">${numY.toFixed(6)}</td>
+                    <td class="mono text-slate-500">${exactY.toFixed(6)}</td>
+                    <td class="mono ${errColor}">${errDisplay}%</td>
+                </tr>
+            `;
+        }
+
         function calculateBounds() {
             let minY = Infinity, maxY = -Infinity;
-            const steps = 150;
-            const h = (b - a) / steps;
-            for(let i=0; i<=steps; i++) {
-                const y = f(a + i * h);
-                if(isFinite(y)) {
-                    if (y < minY) minY = y;
-                    if (y > maxY) maxY = y;
+            exactPoints.forEach(p => {
+                if(p.y < minY) minY = p.y;
+                if(p.y > maxY) maxY = p.y;
+            });
+            numPoints.forEach(p => {
+                if(isFinite(p.y)) {
+                    if(p.y < minY) minY = p.y;
+                    if(p.y > maxY) maxY = p.y;
                 }
-            }
-            if (minY > 0 && minY < (maxY - minY)) minY = 0;
+            });
+
             const yRange = (maxY - minY) || 10;
             logicalMinY = minY - yRange * 0.15;
             logicalMaxY = maxY + yRange * 0.15;
-            const xRange = b - a;
-            logicalMinX = a - xRange * 0.1;
-            logicalMaxX = b + xRange * 0.1;
+            
+            const xRange = xf - x0;
+            logicalMinX = x0 - xRange * 0.05;
+            logicalMaxX = xf + xRange * 0.05;
         }
 
         function mapX(x) { return (x - logicalMinX) / (logicalMaxX - logicalMinX) * canvas.width; }
         function mapY(y) { return canvas.height - ((y - logicalMinY) / (logicalMaxY - logicalMinY) * canvas.height); }
 
-        function drawCanvasGraph(sampledPoints) {
+        function drawCanvasGraph() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Ejes
             ctx.beginPath();
             ctx.strokeStyle = '#e2e8f0';
-            ctx.lineWidth = 1;
-            const y0 = mapY(0);
-            if(y0 >= 0 && y0 <= canvas.height) { ctx.moveTo(0, y0); ctx.lineTo(canvas.width, y0); }
-            const x0 = mapX(0);
-            if(x0 >= 0 && x0 <= canvas.width) { ctx.moveTo(x0, 0); ctx.lineTo(x0, canvas.height); }
+            ctx.lineWidth = 1.5;
+            const y0_axis = mapY(0);
+            if(y0_axis >= 0 && y0_axis <= canvas.height) { ctx.moveTo(0, y0_axis); ctx.lineTo(canvas.width, y0_axis); }
+            const x0_axis = mapX(0);
+            if(x0_axis >= 0 && x0_axis <= canvas.width) { ctx.moveTo(x0_axis, 0); ctx.lineTo(x0_axis, canvas.height); }
             ctx.stroke();
 
-            // Dibujar la curva real f(x)
-            ctx.beginPath();
-            ctx.strokeStyle = '#0f172a'; // slate-900
-            ctx.lineWidth = 2.5;
-            const steps = 200;
-            const h_curve = (logicalMaxX - logicalMinX) / steps;
-            let first = true;
-            
-            // Sombrear el área completa suavemente
-            ctx.fillStyle = 'rgba(226, 232, 240, 0.4)'; // slate-200
-            ctx.moveTo(mapX(a), mapY(0));
-            
-            for (let i=0; i<=steps; i++) {
-                const x = logicalMinX + i * h_curve;
-                const py = mapY(f(x));
-                if(isFinite(py)) {
-                    if (x >= a && x <= b) {
-                        ctx.lineTo(mapX(x), py);
-                    }
-                }
-            }
-            ctx.lineTo(mapX(b), mapY(0));
-            ctx.closePath();
-            ctx.fill(); // Relleno gris de fondo
-
-            // Dibujar línea de la función
-            ctx.beginPath();
-            first = true;
-            for (let i=0; i<=steps; i++) {
-                const x = logicalMinX + i * h_curve;
-                const py = mapY(f(x));
-                if(isFinite(py)) {
-                    if (first) { ctx.moveTo(mapX(x), py); first = false; } 
-                    else { ctx.lineTo(mapX(x), py); }
-                }
-            }
-            ctx.stroke();
-
-            // Dibujar los "Tallos" (Stems) de Gauss
-            sampledPoints.forEach(pt => {
-                const px = mapX(pt.x);
-                const py = mapY(pt.y);
-                const p0 = mapY(0);
-
-                // Línea vertical punteada
+            if (exactPoints.length > 0) {
                 ctx.beginPath();
-                ctx.setLineDash([4, 4]);
-                ctx.strokeStyle = '#9333ea'; // purple-600
-                ctx.lineWidth = 2;
-                ctx.moveTo(px, p0);
-                ctx.lineTo(px, py);
+                ctx.strokeStyle = '#cbd5e1'; 
+                ctx.lineWidth = 5;
+                ctx.moveTo(mapX(exactPoints[0].x), mapY(exactPoints[0].y));
+                for(let i=1; i<exactPoints.length; i++) {
+                    ctx.lineTo(mapX(exactPoints[i].x), mapY(exactPoints[i].y));
+                }
                 ctx.stroke();
-                ctx.setLineDash([]); // Reset
+            }
 
-                // Punto en la curva
+            if (numPoints.length > 0) {
                 ctx.beginPath();
-                ctx.fillStyle = '#7e22ce'; // purple-700
-                ctx.strokeStyle = '#ffffff';
-                ctx.lineWidth = 2;
-                ctx.arc(px, py, 5, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.strokeStyle = '#0f766e'; 
+                ctx.lineWidth = 2.5;
+                ctx.moveTo(mapX(numPoints[0].x), mapY(numPoints[0].y));
+                for(let i=1; i<numPoints.length; i++) {
+                    ctx.lineTo(mapX(numPoints[i].x), mapY(numPoints[i].y));
+                }
                 ctx.stroke();
 
-                // Punto en el eje X
-                ctx.beginPath();
-                ctx.fillStyle = '#db2777'; // pink-600
-                ctx.arc(px, p0, 3, 0, Math.PI * 2);
-                ctx.fill();
-            });
+                numPoints.forEach(pt => {
+                    const px = mapX(pt.x);
+                    const py = mapY(pt.y);
+                    
+                    ctx.beginPath();
+                    ctx.fillStyle = '#e11d48'; 
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 1.5;
+                    ctx.arc(px, py, 4.5, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                });
+            }
         }
 
-        // Listeners
-        sliderN.addEventListener('input', updateGauss);
-        funcInput.addEventListener('input', parseFunction);
-        limitAInput.addEventListener('input', parseFunction);
-        limitBInput.addEventListener('input', parseFunction);
+        nSlider.addEventListener('input', calculateSystem);
+        methodSelect.addEventListener('change', calculateSystem);
+        
+        let timeout = null;
+        const triggerParse = () => {
+            clearTimeout(timeout);
+            timeout = setTimeout(parseFunction, 300);
+        };
 
-        function copyCode() {
-            const code = document.getElementById('python-code').innerText;
-            navigator.clipboard.writeText(code).then(() => {
-                alert("Código Python copiado al portapapeles.");
-            });
-        }
+        funcInput.addEventListener('input', triggerParse);
+        x0Input.addEventListener('input', triggerParse);
+        y0Input.addEventListener('input', triggerParse);
+        xfInput.addEventListener('input', triggerParse);
 
-        // Init
         parseFunction();
     </script>
 </body>
