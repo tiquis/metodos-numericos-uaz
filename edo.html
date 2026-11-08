@@ -66,7 +66,7 @@
         <header class="bg-teal-900 text-white p-8">
             <h1 class="text-3xl font-bold mb-2">Métodos Numéricos: Ecuaciones Diferenciales (EDO)</h1>
             <h2 class="text-xl text-teal-200">Problemas de Valor Inicial: Euler, Heun, Polígono, Ralston y RK4</h2>
-            <p class="mt-4 text-sm text-teal-300">Programa Analítico IC - UAZ | Modelado de Sistemas Dinámicos</p>
+            <p class="mt-4 text-sm text-teal-300 font-medium">Programa Analítico IC - UAZ | Suite de Laboratorios Interactivos</p>
         </header>
 
         <!-- Contenido Principal -->
@@ -115,6 +115,13 @@
                         <p class="mb-3 text-sm text-gray-600">El estándar de la industria. Utiliza un promedio ponderado de 4 pendientes dentro del intervalo para lograr gran exactitud.</p>
                         <div class="bg-teal-50 p-2 rounded text-center overflow-x-auto text-xs border border-teal-200">
                             $$ y_{i+1} = y_i + \frac{h}{6}(k_1 + 2k_2 + 2k_3 + k_4) $$
+                            <div class="text-gray-600 mt-2 text-left inline-block bg-white p-2 rounded border border-teal-100 shadow-sm w-full">
+                                <span class="font-bold text-[10px] uppercase text-teal-700 block mb-1">Evaluación de pendientes:</span>
+                                \(k_1 = f(x_i, y_i)\)<br>
+                                \(k_2 = f(x_i + \frac{h}{2}, y_i + \frac{h}{2}k_1)\)<br>
+                                \(k_3 = f(x_i + \frac{h}{2}, y_i + \frac{h}{2}k_2)\)<br>
+                                \(k_4 = f(x_i + h, y_i + hk_3)\)
+                            </div>
                         </div>
                     </div>
                 </div>
