@@ -64,7 +64,7 @@ Al ser una arquitectura de archivos estáticos, no se requiere la instalación d
 
 **Para acceso en línea:**
 El proyecto está desplegado a través de GitHub Pages y puede ser accedido directamente desde cualquier navegador web en la siguiente ruta:
-👉 [Enlace a GitHub Pages] *(Reemplazar con el enlace real del proyecto)*
+👉 [https://tiquis.github.io/metodos-numericos-uaz/] 
 
 ## 📄 Licencia
 
